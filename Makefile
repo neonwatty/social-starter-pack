@@ -33,7 +33,7 @@ install-node:
 
 install-python:
 	@echo "Installing reddit-market-research..."
-	uv tool install reddit-market-research
+	uv tool install --force reddit-market-research
 	@echo "Done! Run 'reddit-market-research --help' to verify."
 
 # ============================================================================
