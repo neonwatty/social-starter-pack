@@ -6,7 +6,7 @@ help:
 	@echo ""
 	@echo "Installation:"
 	@echo "  make install          Install all packages (Node + Python)"
-	@echo "  make install-node     Install Node packages only (autocomplete-cli)"
+	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder)"
 	@echo "  make install-python   Install Python packages only (reddit-market-research)"
 	@echo ""
 	@echo "Secrets Management:"
@@ -27,9 +27,10 @@ install: install-node install-python
 	@echo "All packages installed successfully!"
 
 install-node:
-	@echo "Installing autocomplete-cli..."
+	@echo "Installing Node tools..."
 	npm install -g @neonwatty/autocomplete-cli
-	@echo "Done! Run 'autocomplete --help' to verify."
+	npm install -g @neonwatty/demo-recorder
+	@echo "Done! Run 'autocomplete --help' and 'demo-recorder --help' to verify."
 
 install-python:
 	@echo "Installing reddit-market-research..."
@@ -102,6 +103,11 @@ check:
 		echo "  [OK] autocomplete-cli"; \
 	else \
 		echo "  [MISSING] autocomplete-cli - run 'make install-node'"; \
+	fi
+	@if command -v demo-recorder &> /dev/null; then \
+		echo "  [OK] demo-recorder"; \
+	else \
+		echo "  [MISSING] demo-recorder - run 'make install-node'"; \
 	fi
 	@echo ""
 	@echo "Python packages:"

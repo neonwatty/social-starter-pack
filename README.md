@@ -20,6 +20,7 @@ make check            # Verify everything works
 
 - **[autocomplete-cli](https://github.com/neonwatty/autocomplete-cli)** - Keyword suggestions from Google, YouTube, Bing, Amazon, DuckDuckGo
 - **[reddit-market-research](https://github.com/neonwatty/reddit-market-research)** - Search Reddit for pain points & opportunities
+- **[demo-recorder](https://github.com/neonwatty/demo-recorder)** - Record demo videos & screenshots of web apps
 
 ## Usage
 
@@ -30,6 +31,10 @@ autocomplete youtube "topic" --expand-alphabet
 
 # Reddit research (secrets auto-injected)
 make reddit ARGS='search -s "startups" -k "looking for,need help"'
+
+# Demo recording (requires FFmpeg)
+demo-recorder record demo.ts -o video.mp4
+demo-recorder screenshot demo.ts -o screenshots/
 ```
 
 ## Commands
