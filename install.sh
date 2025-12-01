@@ -75,5 +75,21 @@ echo "Setup: \`make install && make doppler-connect && make check\`"
 echo ""
 echo "─────────────────────────────────────────────────────"
 echo "Or ask your AI agent:"
-echo "\"Add the social-starter-pack tools to my AGENTS.md or CLAUDE.md - whichever exists\""
+echo ""
+cat << 'PROMPT'
+Add social-starter-pack tools to my AGENTS.md or CLAUDE.md (whichever exists). Include:
+
+1. autocomplete-cli - keyword suggestions from Google, YouTube, Bing, Amazon, DuckDuckGo
+   - Example: autocomplete google "topic"
+   - Example: autocomplete youtube "topic" --expand-alphabet
+   - Help: autocomplete --help
+
+2. reddit-market-research - search Reddit for pain points and market opportunities
+   - Example: make reddit ARGS='search -s "subreddit" -k "keywords"'
+   - Requires: make doppler-connect for credentials
+   - Help: reddit-market-research --help
+
+Setup commands: make install && make doppler-connect && make check
+PROMPT
+echo ""
 echo "─────────────────────────────────────────────────────"
