@@ -1,0 +1,66 @@
+{
+  "name": "@neonwatty/autocomplete-cli",
+  "version": "1.4.0",
+  "description": "CLI tool to query autocomplete suggestions from Google, YouTube, Bing, Amazon, and DuckDuckGo",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "autocomplete": "./dist/index.js"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/suggest.js",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "knip": "knip",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm run build && npm test"
+  },
+  "keywords": [
+    "cli",
+    "autocomplete",
+    "google",
+    "youtube",
+    "seo",
+    "keywords",
+    "keyword-research"
+  ],
+  "author": "neonwatty",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neonwatty/autocomplete-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/neonwatty/autocomplete-cli/issues"
+  },
+  "homepage": "https://github.com/neonwatty/autocomplete-cli#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.0.14",
+    "eslint": "^9.39.1",
+    "knip": "^5.70.2",
+    "nock": "^14.0.10",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.48.0",
+    "vitest": "^4.0.14"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -10,6 +10,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 load_env() {
     if [ -f "$PROJECT_DIR/.env" ]; then
         set -a
+        # shellcheck source=/dev/null
         source "$PROJECT_DIR/.env"
         set +a
         return 0
@@ -62,6 +63,10 @@ main() {
     if [[ "$cmd" == "reddit-market-research" ]]; then
         setup_praw_ini
     fi
+
+    # Special handling for youtube-upload-api (yt-shorts)
+    # YouTube uses OAuth tokens - env vars are passed through for initial auth
+    # The tool handles its own token storage after first auth
 
     # Run the command
     exec "$cmd" "$@"

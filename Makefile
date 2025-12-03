@@ -1,4 +1,4 @@
-.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help
+.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit
 
 # Default target
 help:
@@ -6,7 +6,7 @@ help:
 	@echo ""
 	@echo "Installation:"
 	@echo "  make install          Install all packages (Node + Python)"
-	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder)"
+	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder, youtube-upload-api)"
 	@echo "  make install-python   Install Python packages only (reddit-market-research)"
 	@echo ""
 	@echo "Secrets Management:"
@@ -14,10 +14,18 @@ help:
 	@echo "  make doppler-connect  Connect to social-starter-pack Doppler project"
 	@echo "  make setup-secrets    Create local .env from template (fallback)"
 	@echo ""
+	@echo "Testing:"
+	@echo "  make test             Run all tests"
+	@echo "  make test-autocomplete"
+	@echo "  make test-demo-recorder"
+	@echo "  make test-youtube"
+	@echo "  make test-reddit"
+	@echo ""
 	@echo "Utilities:"
 	@echo "  make check            Verify all tools are installed and configured"
 	@echo "  make autocomplete     Run autocomplete-cli (use ARGS='...' for arguments)"
 	@echo "  make reddit           Run reddit-market-research (use ARGS='...' for arguments)"
+	@echo "  make youtube          Run youtube-upload-api (use ARGS='...' for arguments)"
 
 # ============================================================================
 # Installation
@@ -27,14 +35,15 @@ install: install-node install-python
 	@echo "All packages installed successfully!"
 
 install-node:
-	@echo "Installing Node tools..."
-	npm install -g @neonwatty/autocomplete-cli
-	npm install -g @neonwatty/demo-recorder
-	@echo "Done! Run 'autocomplete --help' and 'demo-recorder --help' to verify."
+	@echo "Installing Node tools from packages/..."
+	cd packages/autocomplete-cli && npm install && npm run build && npm link --force
+	cd packages/demo-recorder && npm install && npm run build && npm link --force
+	cd packages/youtube-upload-api && npm install && npm run build && npm link --force
+	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', and 'yt-shorts --help' to verify."
 
 install-python:
 	@echo "Installing reddit-market-research..."
-	uv tool install --force reddit-market-research
+	uv tool install --force ./packages/reddit-market-research
 	@echo "Done! Run 'reddit-market-research --help' to verify."
 
 # ============================================================================
@@ -91,6 +100,33 @@ autocomplete:
 reddit:
 	@./scripts/run-with-secrets.sh reddit-market-research $(ARGS)
 
+# Run youtube-upload-api with Doppler or .env fallback
+youtube:
+	@./scripts/run-with-secrets.sh yt-shorts $(ARGS)
+
+# ============================================================================
+# Testing
+# ============================================================================
+
+test: test-autocomplete test-demo-recorder test-youtube test-reddit
+	@echo "All tests passed!"
+
+test-autocomplete:
+	@echo "Testing autocomplete-cli..."
+	cd packages/autocomplete-cli && npm test
+
+test-demo-recorder:
+	@echo "Testing demo-recorder..."
+	cd packages/demo-recorder && npm test
+
+test-youtube:
+	@echo "Testing youtube-upload-api..."
+	cd packages/youtube-upload-api && npm test
+
+test-reddit:
+	@echo "Testing reddit-market-research..."
+	cd packages/reddit-market-research && uv run pytest
+
 # ============================================================================
 # Verification
 # ============================================================================
@@ -108,6 +144,11 @@ check:
 		echo "  [OK] demo-recorder"; \
 	else \
 		echo "  [MISSING] demo-recorder - run 'make install-node'"; \
+	fi
+	@if command -v yt-shorts &> /dev/null; then \
+		echo "  [OK] youtube-upload-api (yt-shorts)"; \
+	else \
+		echo "  [MISSING] youtube-upload-api - run 'make install-node'"; \
 	fi
 	@echo ""
 	@echo "Python packages:"

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Credentials (NEVER commit these)
+token.json
+client_secrets.json
+*.json.backup
+
+# Environment
+.env
+.env.local
+!.env.example
+
+# Video files
+*.mp4
+*.mov
+*.webm
+*.mkv
+
+# OS
+.DS_Store
+Thumbs.db

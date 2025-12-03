@@ -1,0 +1,7 @@
+praw.ini
+__pycache__/
+*.pyc
+.env
+venv/
+results.csv
+results.json
