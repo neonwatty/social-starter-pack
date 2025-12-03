@@ -136,3 +136,4 @@ Check if a video meets YouTube Shorts requirements (duration, aspect ratio).
 ```bash
 yt-shorts validate video.mp4
 ```
+
