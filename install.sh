@@ -27,10 +27,12 @@ chmod +x scripts/run-with-secrets.sh
 if [ -f .gitignore ]; then
     # Check if entries already exist
     if ! grep -q "^\.env$" .gitignore 2>/dev/null; then
-        echo "" >> .gitignore
-        echo "# social-starter-pack secrets" >> .gitignore
-        echo ".env" >> .gitignore
-        echo "praw.ini" >> .gitignore
+        {
+            echo ""
+            echo "# social-starter-pack secrets"
+            echo ".env"
+            echo "praw.ini"
+        } >> .gitignore
     fi
 else
     cat > .gitignore << 'EOF'

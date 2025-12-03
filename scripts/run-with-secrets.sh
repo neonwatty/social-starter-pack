@@ -10,6 +10,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 load_env() {
     if [ -f "$PROJECT_DIR/.env" ]; then
         set -a
+        # shellcheck source=/dev/null
         source "$PROJECT_DIR/.env"
         set +a
         return 0
