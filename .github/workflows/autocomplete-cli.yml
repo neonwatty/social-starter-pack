@@ -1,11 +1,19 @@
-name: CI
+name: autocomplete-cli
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'packages/autocomplete-cli/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'packages/autocomplete-cli/**'
+
+defaults:
+  run:
+    working-directory: packages/autocomplete-cli
 
 jobs:
   test:
@@ -24,6 +32,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          cache-dependency-path: packages/autocomplete-cli/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -51,5 +60,5 @@ jobs:
         if: matrix.node-version == 20
         uses: codecov/codecov-action@v4
         with:
-          file: ./coverage/coverage-final.json
+          file: ./packages/autocomplete-cli/coverage/coverage-final.json
           fail_ci_if_error: false

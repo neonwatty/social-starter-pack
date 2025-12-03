@@ -1,11 +1,19 @@
-name: CI
+name: demo-recorder
 
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [main]
+    paths:
+      - 'packages/demo-recorder/**'
   pull_request:
-    branches: [main, master]
+    branches: [main]
+    paths:
+      - 'packages/demo-recorder/**'
+
+defaults:
+  run:
+    working-directory: packages/demo-recorder
 
 jobs:
   test:
@@ -23,6 +31,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          cache-dependency-path: packages/demo-recorder/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -50,6 +59,7 @@ jobs:
         with:
           node-version: 20.x
           cache: 'npm'
+          cache-dependency-path: packages/demo-recorder/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -75,6 +85,7 @@ jobs:
         with:
           node-version: 20.x
           cache: 'npm'
+          cache-dependency-path: packages/demo-recorder/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -87,30 +98,3 @@ jobs:
 
       - name: Run E2E tests
         run: npm run test:e2e
-
-  publish:
-    needs: [test, lint-and-typecheck, e2e-test]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      # Uncomment when ready to publish
-      # - name: Publish to npm
-      #   run: npm publish
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

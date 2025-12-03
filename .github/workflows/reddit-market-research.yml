@@ -1,11 +1,19 @@
-name: CI
+name: reddit-market-research
 
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [main]
+    paths:
+      - 'packages/reddit-market-research/**'
   pull_request:
-    branches: [main, master]
+    branches: [main]
+    paths:
+      - 'packages/reddit-market-research/**'
+
+defaults:
+  run:
+    working-directory: packages/reddit-market-research
 
 jobs:
   lint:
