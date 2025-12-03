@@ -1,0 +1,68 @@
+{
+  "name": "yt-shorts-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for uploading and managing YouTube Shorts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "yt-shorts": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "ts-node src/cli.ts",
+    "auth": "ts-node src/auth.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "knip": "knip",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "youtube",
+    "shorts",
+    "upload",
+    "api",
+    "cli",
+    "video"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_USERNAME/youtube-upload-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/youtube-upload-api/issues"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/youtube-upload-api#readme",
+  "dependencies": {
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^166.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "knip": "^5.38.0",
+    "prettier": "^3.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.17.0",
+    "vitest": "^2.1.8"
+  }
+}

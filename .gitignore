@@ -7,3 +7,10 @@ praw.ini
 
 # Doppler
 .doppler.yaml
+
+# Claude Code
+.claude/
+
+# Node
+node_modules/
+package-lock.json

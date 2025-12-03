@@ -1,0 +1,73 @@
+{
+  "name": "@neonwatty/demo-recorder",
+  "version": "1.7.0",
+  "description": "Record demo videos of web apps using Playwright",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "demo-recorder": "./bin/demo-recorder.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "dev": "ts-node src/index.ts",
+    "record": "ts-node src/index.ts record",
+    "create": "ts-node src/index.ts create",
+    "list": "ts-node src/index.ts list",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:all": "npm test && npm run test:e2e",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "typecheck": "tsc --noEmit",
+    "knip": "knip",
+    "prepublishOnly": "npm run test && npm run build",
+    "postinstall": "npx playwright install chromium || true"
+  },
+  "keywords": [
+    "playwright",
+    "video",
+    "demo",
+    "automation",
+    "screen-recording",
+    "testing",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "dependencies": {
+    "commander": "^12.0.0",
+    "ora": "^8.1.0",
+    "playwright": "^1.48.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "eslint": "^9.39.1",
+    "knip": "^5.70.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
