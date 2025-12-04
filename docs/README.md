@@ -9,6 +9,7 @@ Detailed command references for each tool.
 | [autocomplete-cli](./autocomplete-cli.md) | Query autocomplete suggestions from Google, YouTube, Bing, Amazon, DuckDuckGo |
 | [demo-recorder](./demo-recorder.md) | Record demo videos and screenshots of web apps |
 | [youtube-upload-api](./youtube-upload-api.md) | Manage YouTube Shorts - upload, list, clone, update |
+| [twitter-cli](./twitter-cli.md) | Post tweets and manage content on X/Twitter |
 | [reddit-market-research](./reddit-market-research.md) | Search Reddit for pain points and market opportunities |
 
 ## Quick Reference

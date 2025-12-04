@@ -1,4 +1,4 @@
-.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit
+.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter
 
 # Default target
 help:
@@ -6,7 +6,7 @@ help:
 	@echo ""
 	@echo "Installation:"
 	@echo "  make install          Install all packages (Node + Python)"
-	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder, youtube-upload-api)"
+	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder, youtube-upload-api, twitter-cli)"
 	@echo "  make install-python   Install Python packages only (reddit-market-research)"
 	@echo ""
 	@echo "Secrets Management:"
@@ -19,6 +19,7 @@ help:
 	@echo "  make test-autocomplete"
 	@echo "  make test-demo-recorder"
 	@echo "  make test-youtube"
+	@echo "  make test-twitter"
 	@echo "  make test-reddit"
 	@echo ""
 	@echo "Utilities:"
@@ -26,6 +27,7 @@ help:
 	@echo "  make autocomplete     Run autocomplete-cli (use ARGS='...' for arguments)"
 	@echo "  make reddit           Run reddit-market-research (use ARGS='...' for arguments)"
 	@echo "  make youtube          Run youtube-upload-api (use ARGS='...' for arguments)"
+	@echo "  make twitter          Run twitter-cli (use ARGS='...' for arguments)"
 
 # ============================================================================
 # Installation
@@ -39,7 +41,8 @@ install-node:
 	cd packages/autocomplete-cli && npm install && npm run build && npm link --force
 	cd packages/demo-recorder && npm install && npm run build && npm link --force
 	cd packages/youtube-upload-api && npm install && npm run build && npm link --force
-	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', and 'yt-shorts --help' to verify."
+	cd packages/twitter-cli && npm install && npm run build && npm link --force
+	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'yt-shorts --help', and 'twitter --help' to verify."
 
 install-python:
 	@echo "Installing reddit-market-research..."
@@ -104,11 +107,15 @@ reddit:
 youtube:
 	@./scripts/run-with-secrets.sh yt-shorts $(ARGS)
 
+# Run twitter-cli with Doppler or .env fallback
+twitter:
+	@./scripts/run-with-secrets.sh twitter $(ARGS)
+
 # ============================================================================
 # Testing
 # ============================================================================
 
-test: test-autocomplete test-demo-recorder test-youtube test-reddit
+test: test-autocomplete test-demo-recorder test-youtube test-twitter test-reddit
 	@echo "All tests passed!"
 
 test-autocomplete:
@@ -122,6 +129,10 @@ test-demo-recorder:
 test-youtube:
 	@echo "Testing youtube-upload-api..."
 	cd packages/youtube-upload-api && npm test
+
+test-twitter:
+	@echo "Testing twitter-cli..."
+	cd packages/twitter-cli && npm test
 
 test-reddit:
 	@echo "Testing reddit-market-research..."
@@ -149,6 +160,11 @@ check:
 		echo "  [OK] youtube-upload-api (yt-shorts)"; \
 	else \
 		echo "  [MISSING] youtube-upload-api - run 'make install-node'"; \
+	fi
+	@if command -v twitter &> /dev/null; then \
+		echo "  [OK] twitter-cli (twitter)"; \
+	else \
+		echo "  [MISSING] twitter-cli - run 'make install-node'"; \
 	fi
 	@echo ""
 	@echo "Python packages:"
