@@ -1,5 +1,4 @@
-import { getCredentials } from "./auth";
-import { createOAuth1Header } from "./oauth1";
+import { getAuthHeader } from "./auth";
 
 const USERS_ME_URL = "https://api.x.com/2/users/me";
 const USERS_TWEETS_URL = "https://api.x.com/2/users";
@@ -39,9 +38,7 @@ interface UserResponse {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const credentials = getCredentials();
-
-  const authHeader = createOAuth1Header("GET", USERS_ME_URL, credentials);
+  const authHeader = await getAuthHeader();
 
   const response = await fetch(USERS_ME_URL, {
     headers: {
@@ -73,7 +70,7 @@ export async function getUserTimeline(
   userId: string,
   options: TimelineOptions = {},
 ): Promise<TimelineResponse> {
-  const credentials = getCredentials();
+  const authHeader = await getAuthHeader();
 
   const params = new URLSearchParams({
     "tweet.fields": "created_at,public_metrics",
@@ -109,8 +106,6 @@ export async function getUserTimeline(
 
   const url = `${USERS_TWEETS_URL}/${userId}/tweets?${params.toString()}`;
 
-  const authHeader = createOAuth1Header("GET", url, credentials);
-
   const response = await fetch(url, {
     headers: {
       Authorization: authHeader,
@@ -133,14 +128,13 @@ export async function getMyTimeline(
 }
 
 export async function getTweet(tweetId: string): Promise<Tweet> {
-  const credentials = getCredentials();
+  const authHeader = await getAuthHeader();
 
   const params = new URLSearchParams({
     "tweet.fields": "created_at,public_metrics",
   });
 
   const url = `https://api.x.com/2/tweets/${tweetId}?${params.toString()}`;
-  const authHeader = createOAuth1Header("GET", url, credentials);
 
   const response = await fetch(url, {
     headers: {

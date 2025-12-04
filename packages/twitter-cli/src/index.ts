@@ -1,5 +1,12 @@
-// OAuth 1.0a
-export { OAuth1Credentials, createOAuth1Header, oauth1Fetch } from "./oauth1";
+// OAuth 2.0
+export {
+  type OAuth2Credentials,
+  getAuthorizationUrl,
+  exchangeCodeForToken,
+  refreshAccessToken,
+  startCallbackServer,
+  createOAuth2Header,
+} from "./oauth2";
 
 // Authentication
 export {
@@ -7,6 +14,7 @@ export {
   loadCredentials,
   clearCredentials,
   getCredentials,
+  getAuthHeader,
   verifyCredentials,
 } from "./auth";
 

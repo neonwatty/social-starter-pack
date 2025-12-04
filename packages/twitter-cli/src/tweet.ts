@@ -1,5 +1,4 @@
-import { getCredentials } from "./auth";
-import { createOAuth1Header } from "./oauth1";
+import { getAuthHeader } from "./auth";
 
 const TWEETS_URL = "https://api.x.com/2/tweets";
 
@@ -26,7 +25,7 @@ export interface DeleteResponse {
 export async function createTweet(
   options: TweetOptions,
 ): Promise<TweetResponse> {
-  const credentials = getCredentials();
+  const authHeader = await getAuthHeader();
 
   const body: Record<string, unknown> = {
     text: options.text,
@@ -48,8 +47,6 @@ export async function createTweet(
     body.quote_tweet_id = options.quoteTweetId;
   }
 
-  const authHeader = createOAuth1Header("POST", TWEETS_URL, credentials);
-
   const response = await fetch(TWEETS_URL, {
     method: "POST",
     headers: {
@@ -68,10 +65,8 @@ export async function createTweet(
 }
 
 export async function deleteTweet(tweetId: string): Promise<DeleteResponse> {
-  const credentials = getCredentials();
+  const authHeader = await getAuthHeader();
   const url = `${TWEETS_URL}/${tweetId}`;
-
-  const authHeader = createOAuth1Header("DELETE", url, credentials);
 
   const response = await fetch(url, {
     method: "DELETE",
