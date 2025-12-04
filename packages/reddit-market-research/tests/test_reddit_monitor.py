@@ -11,7 +11,13 @@ import pytest
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from reddit_monitor import check_relevance, load_keywords_from_file, output_results, truncate_text
+from reddit_monitor import (
+    check_relevance,
+    load_keywords_from_file,
+    normalize_subreddits,
+    output_results,
+    truncate_text,
+)
 
 
 class TestCheckRelevance:
@@ -189,3 +195,27 @@ class TestLoadKeywordsFromFile:
         keywords_file.write_text("keyword1\n\n\nkeyword2\n")
         result = load_keywords_from_file(str(keywords_file))
         assert result == ["keyword1", "keyword2"]
+
+
+class TestNormalizeSubreddits:
+    """Tests for normalize_subreddits function."""
+
+    def test_commas_converted_to_plus(self) -> None:
+        """Test that commas are converted to plus signs."""
+        assert normalize_subreddits("python,learnpython,coding") == "python+learnpython+coding"
+
+    def test_plus_signs_unchanged(self) -> None:
+        """Test that plus-separated input is unchanged."""
+        assert normalize_subreddits("python+learnpython+coding") == "python+learnpython+coding"
+
+    def test_single_subreddit_unchanged(self) -> None:
+        """Test that single subreddit is unchanged."""
+        assert normalize_subreddits("python") == "python"
+
+    def test_mixed_separators(self) -> None:
+        """Test mixed comma and plus separators."""
+        assert normalize_subreddits("python,learnpython+coding") == "python+learnpython+coding"
+
+    def test_empty_string(self) -> None:
+        """Test empty string input."""
+        assert normalize_subreddits("") == ""
