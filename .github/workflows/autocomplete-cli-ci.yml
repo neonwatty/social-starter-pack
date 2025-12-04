@@ -1,4 +1,4 @@
-name: autocomplete-cli
+name: autocomplete-cli CI
 
 on:
   workflow_dispatch:

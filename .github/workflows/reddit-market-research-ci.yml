@@ -1,4 +1,4 @@
-name: reddit-market-research
+name: reddit-market-research CI
 
 on:
   workflow_dispatch:

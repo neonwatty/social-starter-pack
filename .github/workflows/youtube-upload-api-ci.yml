@@ -1,4 +1,4 @@
-name: youtube-upload-api
+name: youtube-upload-api CI
 
 on:
   workflow_dispatch:

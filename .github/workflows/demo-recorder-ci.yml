@@ -1,4 +1,4 @@
-name: demo-recorder
+name: demo-recorder CI
 
 on:
   workflow_dispatch:
