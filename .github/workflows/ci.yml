@@ -6,14 +6,12 @@ on:
     branches: [main]
     paths:
       - 'Makefile'
-      - 'install.sh'
       - 'scripts/**'
       - '.env.example'
   pull_request:
     branches: [main]
     paths:
       - 'Makefile'
-      - 'install.sh'
       - 'scripts/**'
       - '.env.example'
 
@@ -23,6 +21,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Shellcheck scripts
-        run: shellcheck scripts/*.sh install.sh
+        run: shellcheck scripts/*.sh
       - name: Test Makefile syntax
         run: make -n install
