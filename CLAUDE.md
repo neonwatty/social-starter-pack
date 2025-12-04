@@ -10,6 +10,7 @@ CLI tools for keyword research, content creation, and social media management.
 | Discover user pain points & opportunities | `reddit-market-research` |
 | Create product demos & screenshots | `demo-recorder` |
 | Publish & manage YouTube Shorts | `yt-shorts` |
+| Post tweets & manage X/Twitter content | `twitter` |
 
 ## Tools
 
@@ -50,6 +51,17 @@ make reddit ARGS='search -s "webdev" -k "bug" --time week --limit 50'
 ```
 [Full docs](./docs/reddit-market-research.md)
 
+### twitter-cli
+Post tweets and manage content on X/Twitter via API v2.
+```bash
+twitter auth                              # First-time auth with credentials
+twitter post "Hello world!"               # Post a tweet
+twitter post "Check this!" --image pic.jpg # Post with media
+twitter timeline --limit 10               # View recent tweets
+twitter thread "First" "Second" "Third"   # Post a thread
+```
+[Full docs](./docs/twitter-cli.md)
+
 ## Setup
 
 ```bash
@@ -60,6 +72,6 @@ make check            # Verify setup
 
 ## Secrets
 
-YouTube and Reddit tools require API credentials. Configure via:
+YouTube, Reddit, and Twitter tools require API credentials. Configure via:
 - Doppler: `make doppler-connect`
 - Or `.env` file (copy from `.env.example`)
