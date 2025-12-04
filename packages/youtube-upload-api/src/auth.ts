@@ -3,12 +3,14 @@ import { OAuth2Client } from "google-auth-library";
 import * as fs from "fs";
 import * as path from "path";
 import * as http from "http";
+import * as os from "os";
 import { URL } from "url";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/youtube", // Full access for upload, update, delete
 ];
-const TOKEN_PATH = path.join(process.cwd(), "token.json");
+const CONFIG_DIR = path.join(os.homedir(), ".config", "yt-shorts");
+const TOKEN_PATH = path.join(CONFIG_DIR, "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "client_secrets.json");
 
 interface Credentials {
@@ -135,6 +137,7 @@ function waitForAuthCode(): Promise<string> {
 }
 
 function saveToken(token: any): void {
+  fs.mkdirSync(CONFIG_DIR, { recursive: true });
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(token, null, 2));
   console.log(`Token saved to ${TOKEN_PATH}`);
 }

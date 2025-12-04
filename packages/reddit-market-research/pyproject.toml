@@ -34,6 +34,7 @@ dev = [
     "pytest>=8.0.0",
     "mypy>=1.13.0",
     "vulture>=2.14",
+    "praw>=7.8.0",
 ]
 
 [tool.ruff]
