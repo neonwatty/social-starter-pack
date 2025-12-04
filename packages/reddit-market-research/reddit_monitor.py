@@ -102,7 +102,10 @@ def search_reddit(
             error_msg = str(e)
             print(f"Error searching for '{keyword}': {e}", file=sys.stderr)
             if "404" in error_msg:
-                print("  Hint: Ensure subreddits are plus-separated (e.g., 'startups+SaaS'), not comma-separated", file=sys.stderr)
+                print(
+                    "  Hint: Ensure subreddits are plus-separated (e.g., 'startups+SaaS'), not comma-separated",
+                    file=sys.stderr,
+                )
 
     # Deduplicate by URL
     seen: set[str] = set()
