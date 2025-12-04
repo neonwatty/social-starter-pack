@@ -11,7 +11,13 @@ import pytest
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from reddit_monitor import check_relevance, load_keywords_from_file, normalize_subreddits, output_results, truncate_text
+from reddit_monitor import (
+    check_relevance,
+    load_keywords_from_file,
+    normalize_subreddits,
+    output_results,
+    truncate_text,
+)
 
 
 class TestCheckRelevance:
