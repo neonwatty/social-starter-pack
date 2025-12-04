@@ -1,0 +1,65 @@
+{
+  "name": "@neonwatty/linkedin-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for posting content and managing posts on LinkedIn",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "linkedin": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "knip": "knip",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "linkedin",
+    "cli",
+    "social-media",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neonwatty/social-starter-pack.git",
+    "directory": "packages/linkedin-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/neonwatty/social-starter-pack/issues"
+  },
+  "homepage": "https://github.com/neonwatty/social-starter-pack/tree/main/packages/linkedin-cli#readme",
+  "dependencies": {
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "@types/node": "^22.10.1",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "knip": "^5.38.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.17.0",
+    "vitest": "^2.1.8"
+  }
+}
