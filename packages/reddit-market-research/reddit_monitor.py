@@ -59,6 +59,15 @@ def check_relevance(text: str, keywords: list[str]) -> bool:
     return any(kw.lower() in text_lower for kw in keywords)
 
 
+def normalize_subreddits(subreddits: str) -> str:
+    """Convert comma-separated subreddits to plus-separated format.
+
+    Reddit API expects subreddits joined with '+', not ','.
+    This auto-converts common user mistakes.
+    """
+    return subreddits.replace(",", "+")
+
+
 def search_reddit(
     subreddits: str,
     keywords: list[str],
@@ -90,7 +99,10 @@ def search_reddit(
                     }
                 )
         except Exception as e:
+            error_msg = str(e)
             print(f"Error searching for '{keyword}': {e}", file=sys.stderr)
+            if "404" in error_msg:
+                print("  Hint: Ensure subreddits are plus-separated (e.g., 'startups+SaaS'), not comma-separated", file=sys.stderr)
 
     # Deduplicate by URL
     seen: set[str] = set()
@@ -200,7 +212,7 @@ Examples:
         "--subreddits",
         "-s",
         required=True,
-        help="Subreddits to search (plus-separated). Example: 'startups+SaaS+indiehackers'",
+        help="Subreddits to search (use + to separate, NOT commas). Example: 'startups+SaaS+indiehackers'",
     )
     search_parser.add_argument(
         "--keywords",
@@ -249,7 +261,7 @@ Examples:
         "--subreddits",
         "-s",
         required=True,
-        help="Subreddits to monitor (plus-separated). Example: 'startups+SaaS'",
+        help="Subreddits to monitor (use + to separate, NOT commas). Example: 'startups+SaaS'",
     )
     monitor_parser.add_argument(
         "--keywords",
@@ -278,9 +290,12 @@ Examples:
         print("Error: Must provide --keywords or --keywords-file", file=sys.stderr)
         return 1
 
+    # Normalize subreddits (convert commas to plus signs)
+    subreddits = normalize_subreddits(args.subreddits)
+
     if args.command == "search":
         results = search_reddit(
-            subreddits=args.subreddits,
+            subreddits=subreddits,
             keywords=keywords,
             time_filter=args.time,
             limit=50,  # Fetch more, then limit display
@@ -294,7 +309,7 @@ Examples:
         output_results(results, output_format, args.output, args.limit)
 
     elif args.command == "monitor":
-        monitor_reddit(args.subreddits, keywords)
+        monitor_reddit(subreddits, keywords)
 
     return 0
 
