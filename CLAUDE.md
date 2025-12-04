@@ -2,6 +2,15 @@
 
 CLI tools for keyword research, content creation, and social media management.
 
+## When to Use
+
+| Task | Tool |
+|------|------|
+| Find keyword ideas for content | `autocomplete` |
+| Discover user pain points & opportunities | `reddit-market-research` |
+| Create product demos & screenshots | `demo-recorder` |
+| Publish & manage YouTube Shorts | `yt-shorts` |
+
 ## Tools
 
 ### autocomplete-cli
