@@ -2,16 +2,16 @@
 
 import { Command } from "commander";
 import * as path from "path";
-import {
-  saveCredentials,
-  loadCredentials,
-  clearCredentials,
-  verifyCredentials,
-} from "./auth";
+import { saveCredentials, clearCredentials } from "./auth";
 import { createTweet, deleteTweet, replyToTweet, createThread } from "./tweet";
 import { uploadMedia } from "./media";
 import { getMyTimeline, getCurrentUser, getTweet } from "./timeline";
-import { OAuth1Credentials } from "./oauth1";
+import {
+  OAuth2Credentials,
+  getAuthorizationUrl,
+  startCallbackServer,
+  exchangeCodeForToken,
+} from "./oauth2";
 
 const program = new Command();
 
@@ -23,68 +23,60 @@ program
 // Auth command
 program
   .command("auth")
-  .description("Authenticate with X/Twitter using OAuth 1.0a credentials")
-  .option("--api-key <key>", "X API Key (Consumer Key)")
-  .option("--api-secret <secret>", "X API Secret (Consumer Secret)")
-  .option("--access-token <token>", "Access Token")
-  .option("--access-token-secret <secret>", "Access Token Secret")
-  .action(async (options) => {
+  .description("Authenticate with X/Twitter using OAuth 2.0")
+  .action(async () => {
     try {
-      const existingCreds = loadCredentials();
+      // Get client credentials from environment
+      const clientId = process.env.X_CLIENT_ID;
+      const clientSecret = process.env.X_CLIENT_SECRET;
 
-      const credentials: OAuth1Credentials = {
-        apiKey:
-          options.apiKey ||
-          existingCreds?.apiKey ||
-          process.env.X_API_KEY ||
-          "",
-        apiSecret:
-          options.apiSecret ||
-          existingCreds?.apiSecret ||
-          process.env.X_API_KEY_SECRET ||
-          process.env.X_API_SECRET ||
-          "",
-        accessToken:
-          options.accessToken ||
-          existingCreds?.accessToken ||
-          process.env.X_ACCESS_TOKEN ||
-          "",
-        accessTokenSecret:
-          options.accessTokenSecret ||
-          existingCreds?.accessTokenSecret ||
-          process.env.X_ACCESS_TOKEN_SECRET ||
-          "",
+      if (!clientId || !clientSecret) {
+        console.error("Error: X_CLIENT_ID and X_CLIENT_SECRET are required.");
+        console.error("\nSet them as environment variables or via Doppler:");
+        console.error("  export X_CLIENT_ID=your_client_id");
+        console.error("  export X_CLIENT_SECRET=your_client_secret");
+        process.exit(1);
+      }
+
+      console.log("Starting OAuth 2.0 authorization flow...\n");
+
+      // Generate authorization URL
+      const { url, codeVerifier, state } = getAuthorizationUrl(clientId);
+
+      console.log("Please visit this URL to authorize the application:\n");
+      console.log(url);
+      console.log("\n");
+
+      // Try to open browser automatically
+      try {
+        const open = await import("open");
+        await open.default(url);
+        console.log("(Browser opened automatically)");
+      } catch {
+        console.log("(Please open the URL manually in your browser)");
+      }
+
+      // Start callback server and wait for authorization
+      const { code } = await startCallbackServer(state);
+
+      console.log("\nAuthorization code received. Exchanging for tokens...");
+
+      // Exchange code for tokens
+      const tokenResponse = await exchangeCodeForToken(
+        code,
+        codeVerifier,
+        clientId,
+        clientSecret,
+      );
+
+      // Save credentials
+      const credentials: OAuth2Credentials = {
+        clientId,
+        clientSecret,
+        accessToken: tokenResponse.access_token,
+        refreshToken: tokenResponse.refresh_token,
+        expiresAt: Date.now() + tokenResponse.expires_in * 1000,
       };
-
-      if (
-        !credentials.apiKey ||
-        !credentials.apiSecret ||
-        !credentials.accessToken ||
-        !credentials.accessTokenSecret
-      ) {
-        console.error("Error: All four credentials are required.");
-        console.error("\nProvide them via CLI options:");
-        console.error("  twitter auth \\");
-        console.error("    --api-key YOUR_API_KEY \\");
-        console.error("    --api-secret YOUR_API_SECRET \\");
-        console.error("    --access-token YOUR_ACCESS_TOKEN \\");
-        console.error("    --access-token-secret YOUR_ACCESS_TOKEN_SECRET");
-        console.error("\nOr environment variables:");
-        console.error(
-          "  X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET",
-        );
-        process.exit(1);
-      }
-
-      console.log("Verifying credentials...");
-      const isValid = await verifyCredentials(credentials);
-
-      if (!isValid) {
-        console.error(
-          "Error: Invalid credentials. Please check your API keys and tokens.",
-        );
-        process.exit(1);
-      }
 
       saveCredentials(credentials);
       console.log("Authentication successful! Credentials saved.");

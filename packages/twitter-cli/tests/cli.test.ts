@@ -29,10 +29,12 @@ describe("twitter-cli", () => {
     });
   });
 
-  describe("oauth1", () => {
-    it("exports OAuth1 signing function", async () => {
-      const { createOAuth1Header } = await import("../src/oauth1");
-      expect(typeof createOAuth1Header).toBe("function");
+  describe("oauth2", () => {
+    it("exports OAuth2 functions", async () => {
+      const { getAuthorizationUrl, createOAuth2Header } =
+        await import("../src/oauth2");
+      expect(typeof getAuthorizationUrl).toBe("function");
+      expect(typeof createOAuth2Header).toBe("function");
     });
   });
 });
