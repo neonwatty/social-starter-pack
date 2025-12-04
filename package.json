@@ -1,9 +1,0 @@
-{
-  "name": "social-starter-pack",
-  "private": true,
-  "workspaces": [
-    "packages/autocomplete-cli",
-    "packages/demo-recorder",
-    "packages/youtube-upload-api"
-  ]
-}
