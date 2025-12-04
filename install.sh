@@ -54,6 +54,8 @@ echo "  1. make install          # Install CLI tools"
 echo "  2. make doppler-connect  # Connect to Doppler secrets"
 echo "  3. make check            # Verify setup"
 echo ""
+echo "Docs: https://github.com/neonwatty/social-starter-pack/tree/main/docs"
+echo ""
 echo "Or run: make help"
 echo ""
 echo "─────────────────────────────────────────────────────"
@@ -62,23 +64,25 @@ echo "────────────────────────�
 echo ""
 echo "## Social Starter Pack Tools"
 echo ""
+echo "CLI reference: https://github.com/neonwatty/social-starter-pack/tree/main/docs"
+echo ""
 echo "### autocomplete-cli"
 echo "Keyword suggestions from Google, YouTube, Bing, Amazon, DuckDuckGo."
 echo "- \`autocomplete google \"topic\"\` - Google suggestions"
 echo "- \`autocomplete --help\` - all options"
-echo "- README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/autocomplete-cli"
+echo "- Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/autocomplete-cli.md"
 echo ""
 echo "### reddit-market-research"
 echo "Search Reddit for pain points and market opportunities."
 echo "- \`make reddit ARGS='search -s \"subreddit\" -k \"keywords\"'\`"
 echo "- Requires: \`make doppler-connect\` for credentials"
-echo "- README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/reddit-market-research"
+echo "- Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/reddit-market-research.md"
 echo ""
 echo "### demo-recorder"
 echo "Record demo videos and screenshots of web apps."
 echo "- \`demo-recorder record demo.ts -o video.mp4\`"
 echo "- Requires: FFmpeg installed"
-echo "- README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/demo-recorder"
+echo "- Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/demo-recorder.md"
 echo ""
 echo "### youtube-upload-api"
 echo "Manage YouTube Shorts - upload, list, clone, update."
@@ -86,7 +90,7 @@ echo "- \`make youtube ARGS='auth'\` - First-time authentication"
 echo "- \`make youtube ARGS='list'\` - List your videos"
 echo "- \`make youtube ARGS='upload video.mp4 --title \"My Short\"'\`"
 echo "- Requires: Google OAuth credentials (see .env.example)"
-echo "- README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/youtube-upload-api"
+echo "- Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/youtube-upload-api.md"
 echo ""
 echo "Setup: \`make install && make doppler-connect && make check\`"
 echo ""
@@ -95,30 +99,32 @@ echo "Or ask your AI agent:"
 echo ""
 cat << 'PROMPT'
 Add social-starter-pack tools to my AGENTS.md or CLAUDE.md (whichever exists).
-Fetch each README for full usage details.
+Fetch each doc file for full CLI reference.
+
+CLI docs: https://github.com/neonwatty/social-starter-pack/tree/main/docs
 
 1. autocomplete-cli - keyword suggestions from Google, YouTube, Bing, Amazon, DuckDuckGo
    - Example: autocomplete google "topic"
    - Help: autocomplete --help
-   - README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/autocomplete-cli
+   - Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/autocomplete-cli.md
 
 2. reddit-market-research - search Reddit for pain points and market opportunities
    - Example: make reddit ARGS='search -s "subreddit" -k "keywords"'
    - Requires: make doppler-connect for credentials
    - Help: reddit-market-research --help
-   - README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/reddit-market-research
+   - Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/reddit-market-research.md
 
 3. demo-recorder - record demo videos and screenshots of web apps
    - Example: demo-recorder record demo.ts -o video.mp4
    - Requires: FFmpeg installed
    - Help: demo-recorder --help
-   - README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/demo-recorder
+   - Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/demo-recorder.md
 
 4. youtube-upload-api - manage YouTube Shorts (upload, list, clone, update)
    - Example: make youtube ARGS='upload video.mp4 --title "My Short"'
    - Requires: Google OAuth credentials
    - Help: yt-shorts --help
-   - README: https://github.com/neonwatty/social-starter-pack/tree/main/packages/youtube-upload-api
+   - Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/youtube-upload-api.md
 
 Setup: make install && make doppler-connect && make check
 PROMPT
