@@ -1,6 +1,6 @@
 [project]
 name = "reddit-market-research"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reddit market research tool for finding potential users and pain points"
 readme = "README.md"
 license = {text = "MIT"}
