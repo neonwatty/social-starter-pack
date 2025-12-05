@@ -9,7 +9,7 @@ Keyword & market research tools in a unified monorepo.
 | [autocomplete-cli](./packages/autocomplete-cli) | Keyword suggestions from Google, YouTube, Bing, Amazon, DuckDuckGo | npm |
 | [reddit-market-research](./packages/reddit-market-research) | Search Reddit for pain points & opportunities | PyPI |
 | [demo-recorder](./packages/demo-recorder) | Record demo videos & screenshots of web apps | npm |
-| [youtube-upload-api](./packages/youtube-upload-api) | Manage YouTube Shorts (upload, list, clone, update) | npm |
+| [youtube-cli](./packages/youtube-cli) | Manage YouTube Shorts (upload, list, clone, update) | npm |
 | [twitter-cli](./packages/twitter-cli) | Post tweets & manage X/Twitter content | npm |
 
 ## Quick Start

@@ -84,13 +84,13 @@ echo "- \`demo-recorder record demo.ts -o video.mp4\`"
 echo "- Requires: FFmpeg installed"
 echo "- Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/demo-recorder.md"
 echo ""
-echo "### youtube-upload-api"
+echo "### youtube-cli"
 echo "Manage YouTube Shorts - upload, list, clone, update."
 echo "- \`make youtube ARGS='auth'\` - First-time authentication"
 echo "- \`make youtube ARGS='list'\` - List your videos"
 echo "- \`make youtube ARGS='upload video.mp4 --title \"My Short\"'\`"
 echo "- Requires: Google OAuth credentials (see .env.example)"
-echo "- Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/youtube-upload-api.md"
+echo "- Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/youtube-cli.md"
 echo ""
 echo "Setup: \`make install && make doppler-connect && make check\`"
 echo ""
@@ -120,11 +120,11 @@ CLI docs: https://github.com/neonwatty/social-starter-pack/tree/main/docs
    - Help: demo-recorder --help
    - Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/demo-recorder.md
 
-4. youtube-upload-api - manage YouTube Shorts (upload, list, clone, update)
+4. youtube-cli - manage YouTube Shorts (upload, list, clone, update)
    - Example: make youtube ARGS='upload video.mp4 --title "My Short"'
    - Requires: Google OAuth credentials
-   - Help: yt-shorts --help
-   - Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/youtube-upload-api.md
+   - Help: youtube --help
+   - Docs: https://github.com/neonwatty/social-starter-pack/blob/main/docs/youtube-cli.md
 
 Setup: make install && make doppler-connect && make check
 PROMPT

@@ -6,7 +6,7 @@ help:
 	@echo ""
 	@echo "Installation:"
 	@echo "  make install          Install all packages (Node + Python)"
-	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder, youtube-upload-api, twitter-cli)"
+	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder, youtube-cli, twitter-cli)"
 	@echo "  make install-python   Install Python packages only (reddit-market-research)"
 	@echo ""
 	@echo "Secrets Management:"
@@ -27,7 +27,7 @@ help:
 	@echo "  make check            Verify all tools are installed and configured"
 	@echo "  make autocomplete     Run autocomplete-cli (use ARGS='...' for arguments)"
 	@echo "  make reddit           Run reddit-market-research (use ARGS='...' for arguments)"
-	@echo "  make youtube          Run youtube-upload-api (use ARGS='...' for arguments)"
+	@echo "  make youtube          Run youtube-cli (use ARGS='...' for arguments)"
 	@echo "  make twitter          Run twitter-cli (use ARGS='...' for arguments)"
 	@echo "  make linkedin         Run linkedin-cli (use ARGS='...' for arguments)"
 
@@ -42,10 +42,10 @@ install-node:
 	@echo "Installing Node tools from packages/..."
 	cd packages/autocomplete-cli && npm install && npm run build && npm link --force
 	cd packages/demo-recorder && npm install && npm run build && npm link --force
-	cd packages/youtube-upload-api && npm install && npm run build && npm link --force
+	cd packages/youtube-cli && npm install && npm run build && npm link --force
 	cd packages/twitter-cli && npm install && npm run build && npm link --force
 	cd packages/linkedin-cli && npm install && npm run build && npm link --force
-	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'yt-shorts --help', 'twitter --help', and 'linkedin --help' to verify."
+	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'youtube --help', 'twitter --help', and 'linkedin --help' to verify."
 
 install-python:
 	@echo "Installing reddit-market-research..."
@@ -106,9 +106,9 @@ autocomplete:
 reddit:
 	@./scripts/run-with-secrets.sh reddit-market-research $(ARGS)
 
-# Run youtube-upload-api with Doppler or .env fallback
+# Run youtube-cli with Doppler or .env fallback
 youtube:
-	@./scripts/run-with-secrets.sh yt-shorts $(ARGS)
+	@./scripts/run-with-secrets.sh youtube $(ARGS)
 
 # Run twitter-cli with Doppler or .env fallback
 twitter:
@@ -134,8 +134,8 @@ test-demo-recorder:
 	cd packages/demo-recorder && npm test
 
 test-youtube:
-	@echo "Testing youtube-upload-api..."
-	cd packages/youtube-upload-api && npm test
+	@echo "Testing youtube-cli..."
+	cd packages/youtube-cli && npm test
 
 test-twitter:
 	@echo "Testing twitter-cli..."
@@ -167,10 +167,10 @@ check:
 	else \
 		echo "  [MISSING] demo-recorder - run 'make install-node'"; \
 	fi
-	@if command -v yt-shorts &> /dev/null; then \
-		echo "  [OK] youtube-upload-api (yt-shorts)"; \
+	@if command -v youtube &> /dev/null; then \
+		echo "  [OK] youtube-cli"; \
 	else \
-		echo "  [MISSING] youtube-upload-api - run 'make install-node'"; \
+		echo "  [MISSING] youtube-cli - run 'make install-node'"; \
 	fi
 	@if command -v twitter &> /dev/null; then \
 		echo "  [OK] twitter-cli (twitter)"; \

@@ -1,19 +1,19 @@
-name: youtube-upload-api CI
+name: youtube-cli CI
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'packages/youtube-upload-api/**'
+      - 'packages/youtube-cli/**'
   pull_request:
     branches: [main]
     paths:
-      - 'packages/youtube-upload-api/**'
+      - 'packages/youtube-cli/**'
 
 defaults:
   run:
-    working-directory: packages/youtube-upload-api
+    working-directory: packages/youtube-cli
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
-          cache-dependency-path: packages/youtube-upload-api/package-lock.json
+          cache-dependency-path: packages/youtube-cli/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -64,7 +64,7 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: packages/youtube-upload-api/package-lock.json
+          cache-dependency-path: packages/youtube-cli/package-lock.json
 
       - name: Install dependencies
         run: npm ci
