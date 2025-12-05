@@ -29,13 +29,13 @@ function printUsage(): void {
 YouTube Shorts Upload CLI
 
 Usage:
-  yt-shorts auth                        Authenticate with YouTube
-  yt-shorts upload <file> [options]     Upload a video as a Short
-  yt-shorts list [options]              List your channel's videos
-  yt-shorts update <video-id> [options] Update video metadata
-  yt-shorts clone <video-id> [options]  Clone video with new metadata
-  yt-shorts validate <file>             Validate video for Shorts
-  yt-shorts help                        Show this help message
+  youtube auth                        Authenticate with YouTube
+  youtube upload <file> [options]     Upload a video as a Short
+  youtube list [options]              List your channel's videos
+  youtube update <video-id> [options] Update video metadata
+  youtube clone <video-id> [options]  Clone video with new metadata
+  youtube validate <file>             Validate video for Shorts
+  youtube help                        Show this help message
 
 Upload Options:
   --title, -t <title>         Video title (required)
@@ -64,12 +64,12 @@ Clone Options:
   --keep-file                 Keep downloaded video file
 
 Examples:
-  yt-shorts auth
-  yt-shorts upload video.mp4 --title "My Short" --privacy public
-  yt-shorts list --max 20 --format json
-  yt-shorts update abc123 --title "New Title" --privacy unlisted
-  yt-shorts clone abc123 --title "Cloned Video"
-  yt-shorts validate video.mp4
+  youtube auth
+  youtube upload video.mp4 --title "My Short" --privacy public
+  youtube list --max 20 --format json
+  youtube update abc123 --title "New Title" --privacy unlisted
+  youtube clone abc123 --title "Cloned Video"
+  youtube validate video.mp4
 
 Setup:
   1. Create a project at https://console.cloud.google.com
@@ -77,7 +77,7 @@ Setup:
   3. Create OAuth 2.0 credentials (Web application)
   4. Add http://localhost:3000 as redirect URI
   5. Download as client_secrets.json in this directory
-  6. Run: yt-shorts auth
+  6. Run: youtube auth
 `);
 }
 
@@ -226,7 +226,7 @@ async function handleList(args: CliArgs): Promise<void> {
 async function handleUpdate(args: CliArgs): Promise<void> {
   if (!args.videoId) {
     console.error("Error: No video ID specified");
-    console.error("Usage: yt-shorts update <video-id> [options]");
+    console.error("Usage: youtube update <video-id> [options]");
     process.exit(1);
   }
 
@@ -246,7 +246,7 @@ async function handleUpdate(args: CliArgs): Promise<void> {
 async function handleClone(args: CliArgs): Promise<void> {
   if (!args.videoId) {
     console.error("Error: No video ID specified");
-    console.error("Usage: yt-shorts clone <video-id> --title <title>");
+    console.error("Usage: youtube clone <video-id> --title <title>");
     process.exit(1);
   }
 

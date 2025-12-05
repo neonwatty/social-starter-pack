@@ -1,11 +1,11 @@
 {
-  "name": "yt-shorts-cli",
-  "version": "1.0.1",
+  "name": "@neonwatty/youtube-cli",
+  "version": "1.0.0",
   "description": "CLI tool for uploading and managing YouTube Shorts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "yt-shorts": "./dist/cli.js"
+    "youtube": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -43,12 +43,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_USERNAME/youtube-upload-api.git"
+    "url": "git+https://github.com/neonwatty/social-starter-pack.git"
   },
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/youtube-upload-api/issues"
+    "url": "https://github.com/neonwatty/social-starter-pack/issues"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/youtube-upload-api#readme",
+  "homepage": "https://github.com/neonwatty/social-starter-pack/tree/main/packages/youtube-upload-api#readme",
   "dependencies": {
     "google-auth-library": "^10.5.0",
     "googleapis": "^166.0.0"

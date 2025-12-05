@@ -1,11 +1,11 @@
-# youtube-upload-api (yt-shorts)
+# youtube-cli
 
 Manage YouTube Shorts - upload, list, clone, and update videos.
 
 ## Installation
 
 ```bash
-npm install -g @neonwatty/youtube-upload-api
+npm install -g @neonwatty/youtube-cli
 ```
 
 ## Setup
@@ -15,17 +15,17 @@ npm install -g @neonwatty/youtube-upload-api
 3. Create OAuth 2.0 credentials (Web application type)
 4. Add `http://localhost:3000` as authorized redirect URI
 5. Download credentials as `client_secrets.json`
-6. Run `yt-shorts auth` to authenticate
+6. Run `youtube auth` to authenticate
 
 ## Commands
 
 ```
-yt-shorts auth                    Authenticate with YouTube
-yt-shorts upload <file>           Upload video as a Short
-yt-shorts list                    List your channel's videos
-yt-shorts update <video-id>       Update video metadata
-yt-shorts clone <video-id>        Clone video with new metadata
-yt-shorts validate <file>         Validate video for Shorts requirements
+youtube auth                    Authenticate with YouTube
+youtube upload <file>           Upload video as a Short
+youtube list                    List your channel's videos
+youtube update <video-id>       Update video metadata
+youtube clone <video-id>        Clone video with new metadata
+youtube validate <file>         Validate video for Shorts requirements
 ```
 
 ## Upload Options
@@ -70,17 +70,17 @@ yt-shorts validate <file>         Validate video for Shorts requirements
 
 First-time authentication:
 ```bash
-yt-shorts auth
+youtube auth
 ```
 
 Upload a Short:
 ```bash
-yt-shorts upload video.mp4 --title "My Short" --privacy public
+youtube upload video.mp4 --title "My Short" --privacy public
 ```
 
 Upload with full metadata:
 ```bash
-yt-shorts upload video.mp4 \
+youtube upload video.mp4 \
   --title "Tutorial: Quick Tips" \
   --description "Learn something new!" \
   --tags "tutorial,tips,howto" \
@@ -89,24 +89,24 @@ yt-shorts upload video.mp4 \
 
 List your videos:
 ```bash
-yt-shorts list --max 20
-yt-shorts list --format json
-yt-shorts list --privacy public
+youtube list --max 20
+youtube list --format json
+youtube list --privacy public
 ```
 
 Update video metadata:
 ```bash
-yt-shorts update abc123 --title "New Title" --privacy unlisted
+youtube update abc123 --title "New Title" --privacy unlisted
 ```
 
 Clone a video with new title:
 ```bash
-yt-shorts clone abc123 --title "Cloned Video"
+youtube clone abc123 --title "Cloned Video"
 ```
 
 Validate before uploading:
 ```bash
-yt-shorts validate video.mp4
+youtube validate video.mp4
 ```
 
 ## Video Requirements for Shorts
