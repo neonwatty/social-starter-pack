@@ -64,7 +64,7 @@ main() {
         setup_praw_ini
     fi
 
-    # Special handling for youtube-upload-api (yt-shorts)
+    # Special handling for youtube-cli
     # YouTube uses OAuth tokens - env vars are passed through for initial auth
     # The tool handles its own token storage after first auth
 

@@ -42,7 +42,7 @@ youtube upload video.mp4 --title "My Short"    # Upload
 youtube list --max 20                          # List videos
 youtube clone <video-id> --title "New Title"   # Clone video
 ```
-[Full docs](./docs/youtube-upload-api.md)
+[Full docs](./docs/youtube-cli.md)
 
 ### reddit-market-research
 Search Reddit for pain points and market opportunities.
