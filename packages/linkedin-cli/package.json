@@ -1,6 +1,6 @@
 {
   "name": "@neonwatty/linkedin-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tool for posting content and managing posts on LinkedIn",
   "type": "module",
   "main": "dist/index.js",
