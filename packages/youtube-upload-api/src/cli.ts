@@ -105,12 +105,15 @@ function parseArgs(args: string[]): CliArgs {
       result.format = args[++i] as "table" | "json";
     } else if (arg === "--keep-file") {
       result.keepFile = true;
-    } else if (!arg.startsWith("-")) {
+    } else if (!arg.startsWith("-") || result.command === "update" || result.command === "clone") {
       // First positional arg: file for upload/validate, videoId for update/clone
+      // Note: YouTube video IDs can start with "-" so we allow that for update/clone
       if (!result.file && !result.videoId) {
         if (result.command === "update" || result.command === "clone") {
-          result.videoId = arg;
-        } else {
+          if (!arg.startsWith("--")) {
+            result.videoId = arg;
+          }
+        } else if (!arg.startsWith("-")) {
           result.file = arg;
         }
       }
