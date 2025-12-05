@@ -1,4 +1,4 @@
-.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter
+.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin
 
 # Default target
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "  make test-demo-recorder"
 	@echo "  make test-youtube"
 	@echo "  make test-twitter"
+	@echo "  make test-linkedin"
 	@echo "  make test-reddit"
 	@echo ""
 	@echo "Utilities:"
@@ -28,6 +29,7 @@ help:
 	@echo "  make reddit           Run reddit-market-research (use ARGS='...' for arguments)"
 	@echo "  make youtube          Run youtube-upload-api (use ARGS='...' for arguments)"
 	@echo "  make twitter          Run twitter-cli (use ARGS='...' for arguments)"
+	@echo "  make linkedin         Run linkedin-cli (use ARGS='...' for arguments)"
 
 # ============================================================================
 # Installation
@@ -42,7 +44,8 @@ install-node:
 	cd packages/demo-recorder && npm install && npm run build && npm link --force
 	cd packages/youtube-upload-api && npm install && npm run build && npm link --force
 	cd packages/twitter-cli && npm install && npm run build && npm link --force
-	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'yt-shorts --help', and 'twitter --help' to verify."
+	cd packages/linkedin-cli && npm install && npm run build && npm link --force
+	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'yt-shorts --help', 'twitter --help', and 'linkedin --help' to verify."
 
 install-python:
 	@echo "Installing reddit-market-research..."
@@ -111,11 +114,15 @@ youtube:
 twitter:
 	@./scripts/run-with-secrets.sh twitter $(ARGS)
 
+# Run linkedin-cli with Doppler or .env fallback
+linkedin:
+	@./scripts/run-with-secrets.sh linkedin $(ARGS)
+
 # ============================================================================
 # Testing
 # ============================================================================
 
-test: test-autocomplete test-demo-recorder test-youtube test-twitter test-reddit
+test: test-autocomplete test-demo-recorder test-youtube test-twitter test-linkedin test-reddit
 	@echo "All tests passed!"
 
 test-autocomplete:
@@ -133,6 +140,10 @@ test-youtube:
 test-twitter:
 	@echo "Testing twitter-cli..."
 	cd packages/twitter-cli && npm test
+
+test-linkedin:
+	@echo "Testing linkedin-cli..."
+	cd packages/linkedin-cli && npm test
 
 test-reddit:
 	@echo "Testing reddit-market-research..."
@@ -165,6 +176,11 @@ check:
 		echo "  [OK] twitter-cli (twitter)"; \
 	else \
 		echo "  [MISSING] twitter-cli - run 'make install-node'"; \
+	fi
+	@if command -v linkedin &> /dev/null; then \
+		echo "  [OK] linkedin-cli (linkedin)"; \
+	else \
+		echo "  [MISSING] linkedin-cli - run 'make install-node'"; \
 	fi
 	@echo ""
 	@echo "Python packages:"
