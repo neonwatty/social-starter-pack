@@ -250,7 +250,7 @@ export async function authenticate(
     credentials = stored;
   }
 
-  const scopes = ["w_member_social"];
+  const scopes = ["openid", "profile", "w_member_social"];
 
   const authParams = new URLSearchParams({
     response_type: "code",
