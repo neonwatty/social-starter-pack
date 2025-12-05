@@ -9,7 +9,7 @@ CLI tools for keyword research, content creation, and social media management.
 | Find keyword ideas for content | `autocomplete` |
 | Discover user pain points & opportunities | `reddit-market-research` |
 | Create product demos & screenshots | `demo-recorder` |
-| Publish & manage YouTube Shorts | `yt-shorts` |
+| Publish & manage YouTube Shorts | `youtube` |
 | Post tweets & manage X/Twitter content | `twitter` |
 | Post updates & manage LinkedIn content | `linkedin` |
 
@@ -34,13 +34,13 @@ demo-recorder gif video.mp4 -o demo.gif   # Convert to GIF
 ```
 [Full docs](./docs/demo-recorder.md)
 
-### youtube-upload-api (yt-shorts)
+### youtube-cli
 Manage YouTube Shorts - upload, list, clone, update.
 ```bash
-yt-shorts auth                                    # First-time auth
-yt-shorts upload video.mp4 --title "My Short"    # Upload
-yt-shorts list --max 20                          # List videos
-yt-shorts clone <video-id> --title "New Title"   # Clone video
+youtube auth                                    # First-time auth
+youtube upload video.mp4 --title "My Short"    # Upload
+youtube list --max 20                          # List videos
+youtube clone <video-id> --title "New Title"   # Clone video
 ```
 [Full docs](./docs/youtube-upload-api.md)
 

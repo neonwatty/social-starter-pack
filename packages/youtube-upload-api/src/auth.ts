@@ -9,7 +9,7 @@ import { URL } from "url";
 const SCOPES = [
   "https://www.googleapis.com/auth/youtube", // Full access for upload, update, delete
 ];
-const CONFIG_DIR = path.join(os.homedir(), ".config", "yt-shorts");
+const CONFIG_DIR = path.join(os.homedir(), ".config", "youtube-cli");
 const TOKEN_PATH = path.join(CONFIG_DIR, "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "client_secrets.json");
 

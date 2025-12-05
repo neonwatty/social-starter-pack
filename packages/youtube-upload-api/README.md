@@ -1,4 +1,4 @@
-# yt-shorts
+# youtube-cli
 
 CLI tool for managing YouTube Shorts.
 
@@ -57,11 +57,11 @@ Download OAuth credentials from Google Cloud Console as `client_secrets.json`.
 
 ## Commands
 
-### `yt-shorts auth`
+### `youtube auth`
 
 Authenticate with YouTube (required before other commands).
 
-### `yt-shorts list [options]`
+### `youtube list [options]`
 
 List your channel's videos.
 
@@ -72,12 +72,12 @@ List your channel's videos.
 | `--format <type>`    | Output: table, json (default: table) |
 
 ```bash
-yt-shorts list
-yt-shorts list --max 20 --format json
-yt-shorts list --privacy public
+youtube list
+youtube list --max 20 --format json
+youtube list --privacy public
 ```
 
-### `yt-shorts upload <file> [options]`
+### `youtube upload <file> [options]`
 
 Upload a video as a YouTube Short.
 
@@ -91,11 +91,11 @@ Upload a video as a YouTube Short.
 | `--force`                  | Upload even if validation fails              |
 
 ```bash
-yt-shorts upload video.mp4 --title "My Short"
-yt-shorts upload video.mp4 -t "Gaming Clip" -d "Epic moment" --tags gaming,clips --privacy public
+youtube upload video.mp4 --title "My Short"
+youtube upload video.mp4 -t "Gaming Clip" -d "Epic moment" --tags gaming,clips --privacy public
 ```
 
-### `yt-shorts update <video-id> [options]`
+### `youtube update <video-id> [options]`
 
 Update metadata on an existing video.
 
@@ -107,12 +107,12 @@ Update metadata on an existing video.
 | `--privacy <status>`       | Change privacy status |
 
 ```bash
-yt-shorts update abc123 --title "New Title"
-yt-shorts update abc123 --privacy unlisted
-yt-shorts update abc123 -t "Title" -d "Description" --tags tag1,tag2
+youtube update abc123 --title "New Title"
+youtube update abc123 --privacy unlisted
+youtube update abc123 -t "Title" -d "Description" --tags tag1,tag2
 ```
 
-### `yt-shorts clone <video-id> [options]`
+### `youtube clone <video-id> [options]`
 
 Download a video and re-upload with new metadata.
 
@@ -125,14 +125,14 @@ Download a video and re-upload with new metadata.
 | `--keep-file`              | Keep downloaded video file         |
 
 ```bash
-yt-shorts clone abc123 --title "Cloned Video"
-yt-shorts clone abc123 -t "New Version" --privacy public --keep-file
+youtube clone abc123 --title "Cloned Video"
+youtube clone abc123 -t "New Version" --privacy public --keep-file
 ```
 
-### `yt-shorts validate <file>`
+### `youtube validate <file>`
 
 Check if a video meets YouTube Shorts requirements (duration, aspect ratio).
 
 ```bash
-yt-shorts validate video.mp4
+youtube validate video.mp4
 ```
