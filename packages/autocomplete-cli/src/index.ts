@@ -29,6 +29,8 @@ program
   .option("-d, --delay <ms>", "Delay between API calls in milliseconds (default: 100)", "100")
   .option("-e, --expand", "Expand with alphabet suffixes (a-z)")
   .option("-q, --questions", "Expand with question words")
+  .option("-m, --commercial", "Expand with commercial/buying intent modifiers")
+  .option("-b, --problems", "Expand with problem/pain point modifiers")
   .option("-p, --prefix <prefixes>", "Custom prefixes (comma-separated)")
   .option("-f, --format <type>", "Output format: text, json, csv (default: text)")
   .action(async (query: string, options: CommandOptions) => {
@@ -53,6 +55,8 @@ program
   .option("-d, --delay <ms>", "Delay between API calls in milliseconds (default: 100)", "100")
   .option("-e, --expand", "Expand with alphabet suffixes (a-z)")
   .option("-q, --questions", "Expand with question words")
+  .option("-m, --commercial", "Expand with commercial/buying intent modifiers")
+  .option("-b, --problems", "Expand with problem/pain point modifiers")
   .option("-p, --prefix <prefixes>", "Custom prefixes (comma-separated)")
   .option("-f, --format <type>", "Output format: text, json, csv (default: text)")
   .action(async (query: string, options: CommandOptions) => {
@@ -77,6 +81,8 @@ program
   .option("-d, --delay <ms>", "Delay between API calls in milliseconds (default: 100)", "100")
   .option("-e, --expand", "Expand with alphabet suffixes (a-z)")
   .option("-q, --questions", "Expand with question words")
+  .option("-m, --commercial", "Expand with commercial/buying intent modifiers")
+  .option("-b, --problems", "Expand with problem/pain point modifiers")
   .option("-p, --prefix <prefixes>", "Custom prefixes (comma-separated)")
   .option("-f, --format <type>", "Output format: text, json, csv (default: text)")
   .action(async (query: string, options: CommandOptions) => {
@@ -99,6 +105,8 @@ program
   .option("-d, --delay <ms>", "Delay between API calls in milliseconds (default: 100)", "100")
   .option("-e, --expand", "Expand with alphabet suffixes (a-z)")
   .option("-q, --questions", "Expand with question words")
+  .option("-m, --commercial", "Expand with commercial/buying intent modifiers")
+  .option("-b, --problems", "Expand with problem/pain point modifiers")
   .option("-p, --prefix <prefixes>", "Custom prefixes (comma-separated)")
   .option("-f, --format <type>", "Output format: text, json, csv (default: text)")
   .action(async (query: string, options: CommandOptions) => {
@@ -122,6 +130,8 @@ program
   .option("-d, --delay <ms>", "Delay between API calls in milliseconds (default: 100)", "100")
   .option("-e, --expand", "Expand with alphabet suffixes (a-z)")
   .option("-q, --questions", "Expand with question words")
+  .option("-m, --commercial", "Expand with commercial/buying intent modifiers")
+  .option("-b, --problems", "Expand with problem/pain point modifiers")
   .option("-p, --prefix <prefixes>", "Custom prefixes (comma-separated)")
   .option("-f, --format <type>", "Output format: text, json, csv (default: text)")
   .action(async (query: string, options: CommandOptions) => {
