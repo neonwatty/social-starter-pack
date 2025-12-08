@@ -11,6 +11,7 @@ Keyword & market research tools in a unified monorepo.
 | [demo-recorder](./packages/demo-recorder) | Record demo videos & screenshots of web apps | npm |
 | [youtube-cli](./packages/youtube-cli) | Manage YouTube Shorts (upload, list, clone, update) | npm |
 | [twitter-cli](./packages/twitter-cli) | Post tweets & manage X/Twitter content | npm |
+| [linkedin-cli](./packages/linkedin-cli) | Post updates & manage LinkedIn content | npm |
 
 ## Quick Start
 
