@@ -28,6 +28,8 @@ All commands support these options:
 -d, --delay <ms>       Delay between API calls (default: 100)
 -e, --expand           Expand with alphabet suffixes (a-z)
 -q, --questions        Expand with question words (who, what, why, etc.)
+-m, --commercial       Expand with commercial/buying intent modifiers
+-b, --problems         Expand with problem/pain point modifiers
 -p, --prefix <list>    Custom prefixes (comma-separated)
 -f, --format <type>    Output format: text, json, csv (default: text)
 ```
@@ -64,4 +66,22 @@ autocomplete bing "marketing tips" --delay 200 --format csv
 Localized results:
 ```bash
 autocomplete google "rezepte" --lang de --country de
+```
+
+Commercial keyword research:
+```bash
+autocomplete google "CRM software" --commercial
+# Returns: "best CRM software", "CRM software review", "CRM software vs", etc.
+```
+
+Pain point discovery:
+```bash
+autocomplete google "React" --problems
+# Returns: "React problem", "React not working", "React error", etc.
+```
+
+Combine expansions for comprehensive research:
+```bash
+autocomplete google "project management" -m -q -f json
+# Commercial + questions + JSON output
 ```

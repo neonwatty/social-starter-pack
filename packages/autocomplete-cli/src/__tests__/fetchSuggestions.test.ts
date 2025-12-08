@@ -10,6 +10,8 @@ import {
   fetchExpandedSuggestions,
   ALPHABET,
   QUESTION_WORDS,
+  COMMERCIAL_MODIFIERS,
+  PROBLEM_MODIFIERS,
 } from "../suggest.js";
 
 describe("fetchSuggestions", () => {
@@ -804,6 +806,72 @@ describe("expandQuery", () => {
     expect(QUESTION_WORDS).toContain("what");
     expect(QUESTION_WORDS).toContain("how");
     expect(QUESTION_WORDS).toContain("why");
+  });
+
+  it("exports COMMERCIAL_MODIFIERS constant", () => {
+    expect(COMMERCIAL_MODIFIERS).toHaveLength(14);
+    expect(COMMERCIAL_MODIFIERS).toContain("best");
+    expect(COMMERCIAL_MODIFIERS).toContain("top");
+    expect(COMMERCIAL_MODIFIERS).toContain("vs");
+    expect(COMMERCIAL_MODIFIERS).toContain("review");
+    expect(COMMERCIAL_MODIFIERS).toContain("alternative");
+  });
+
+  it("exports PROBLEM_MODIFIERS constant", () => {
+    expect(PROBLEM_MODIFIERS).toHaveLength(9);
+    expect(PROBLEM_MODIFIERS).toContain("problem");
+    expect(PROBLEM_MODIFIERS).toContain("issue");
+    expect(PROBLEM_MODIFIERS).toContain("fix");
+    expect(PROBLEM_MODIFIERS).toContain("not working");
+  });
+
+  it("expands with commercial modifiers (both prefix and suffix)", () => {
+    const result = expandQuery("CRM", { commercial: true });
+    // original + (14 modifiers * 2 positions)
+    expect(result).toHaveLength(29);
+    expect(result[0]).toBe("CRM");
+    expect(result).toContain("best CRM");
+    expect(result).toContain("CRM best");
+    expect(result).toContain("top CRM");
+    expect(result).toContain("CRM review");
+    expect(result).toContain("CRM alternative");
+  });
+
+  it("expands with problem modifiers (both prefix and suffix)", () => {
+    const result = expandQuery("React", { problems: true });
+    // original + (9 modifiers * 2 positions)
+    expect(result).toHaveLength(19);
+    expect(result[0]).toBe("React");
+    expect(result).toContain("React problem");
+    expect(result).toContain("problem React");
+    expect(result).toContain("React fix");
+    expect(result).toContain("fix React");
+    expect(result).toContain("React not working");
+  });
+
+  it("combines commercial and problems options", () => {
+    const result = expandQuery("software", { commercial: true, problems: true });
+    // original + (14 * 2) + (9 * 2) = 1 + 28 + 18 = 47
+    expect(result).toHaveLength(47);
+    expect(result).toContain("best software");
+    expect(result).toContain("software problem");
+  });
+
+  it("combines all expansion options", () => {
+    const result = expandQuery("tool", {
+      expand: true,
+      questions: true,
+      commercial: true,
+      problems: true,
+      prefix: "free",
+    });
+    // 1 + 26 + 10 + 28 + 18 + 1 = 84
+    expect(result).toHaveLength(84);
+    expect(result).toContain("tool a");
+    expect(result).toContain("what tool");
+    expect(result).toContain("best tool");
+    expect(result).toContain("tool problem");
+    expect(result).toContain("free tool");
   });
 });
 

@@ -35,11 +35,15 @@ export interface FormatOptions {
 export interface ExpandOptions {
   expand?: boolean;
   questions?: boolean;
+  commercial?: boolean;
+  problems?: boolean;
   prefix?: string;
 }
 
 export const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 export const QUESTION_WORDS = ['what', 'how', 'why', 'when', 'where', 'who', 'which', 'can', 'does', 'is'];
+export const COMMERCIAL_MODIFIERS = ['best', 'top', 'vs', 'versus', 'review', 'reviews', 'cheap', 'affordable', 'buy', 'price', 'pricing', 'alternative', 'alternatives', 'comparison'];
+export const PROBLEM_MODIFIERS = ['problem', 'issue', 'error', 'fix', 'broken', 'not working', 'help', 'trouble', 'struggling'];
 
 export type Source = "google" | "youtube" | "bing" | "amazon" | "duckduckgo";
 
@@ -248,6 +252,16 @@ export function expandQuery(query: string, options: ExpandOptions): string[] {
     queries.push(...QUESTION_WORDS.map(word => `${word} ${query}`));
   }
 
+  if (options.commercial) {
+    queries.push(...COMMERCIAL_MODIFIERS.map(mod => `${mod} ${query}`));
+    queries.push(...COMMERCIAL_MODIFIERS.map(mod => `${query} ${mod}`));
+  }
+
+  if (options.problems) {
+    queries.push(...PROBLEM_MODIFIERS.map(mod => `${query} ${mod}`));
+    queries.push(...PROBLEM_MODIFIERS.map(mod => `${mod} ${query}`));
+  }
+
   if (options.prefix) {
     const prefixes = options.prefix.split(',').map(p => p.trim());
     queries.push(...prefixes.map(prefix => `${prefix} ${query}`));
@@ -283,7 +297,7 @@ export async function handleCommand(
   source: Source
 ): Promise<CommandResult> {
   try {
-    const hasExpansion = options.expand || options.questions || options.prefix;
+    const hasExpansion = options.expand || options.questions || options.commercial || options.problems || options.prefix;
     const suggestions = hasExpansion
       ? await fetchExpandedSuggestions(query, options, source)
       : await fetchSuggestions(query, options, source);
