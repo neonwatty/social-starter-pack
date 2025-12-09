@@ -12,6 +12,7 @@ Keyword & market research tools in a unified monorepo.
 | [youtube-cli](./packages/youtube-cli) | Manage YouTube Shorts (upload, list, clone, update) | npm |
 | [twitter-cli](./packages/twitter-cli) | Post tweets & manage X/Twitter content | npm |
 | [linkedin-cli](./packages/linkedin-cli) | Post updates & manage LinkedIn content | npm |
+| [google-forms-cli](./packages/google-forms-cli) | Create forms, add questions, export responses | npm |
 
 ## Quick Start
 
