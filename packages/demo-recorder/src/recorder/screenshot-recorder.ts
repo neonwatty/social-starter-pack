@@ -13,6 +13,7 @@ import type {
   ClickOptions,
   ZoomOptions,
   ScrollOptions,
+  WaitForEnabledOptions,
 } from '../core/types';
 import { DEFAULT_VIDEO_SETTINGS, DEFAULT_SCREENSHOT_SETTINGS } from '../core/types';
 import { logger } from '../utils/logger';
@@ -215,6 +216,36 @@ export class ScreenshotRecorder {
       screenshot: async (name?: string) => {
         const capture = await this.captureScreenshot(page, name || `manual-${this.captures.length + 1}`, 'manual');
         return capture.filepath;
+      },
+      waitForEnabled: async (selector: string, options?: WaitForEnabledOptions) => {
+        const timeout = options?.timeout ?? 30000;
+        const interval = options?.interval ?? 100;
+        const startTime = Date.now();
+
+        while (Date.now() - startTime < timeout) {
+          const isEnabled = await page.evaluate((sel) => {
+            const el = document.querySelector(sel) as HTMLButtonElement | HTMLInputElement;
+            if (!el) return false;
+            return !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+          }, selector);
+
+          if (isEnabled) return;
+          await page.waitForTimeout(interval);
+        }
+        throw new Error(`waitForEnabled: Element "${selector}" did not become enabled within ${timeout}ms`);
+      },
+      exists: async (selector: string) => {
+        const element = await page.$(selector);
+        return element !== null;
+      },
+      isVisible: async (selector: string) => {
+        try {
+          const element = await page.$(selector);
+          if (!element) return false;
+          return await element.isVisible();
+        } catch {
+          return false;
+        }
       },
     };
   }
@@ -479,12 +510,59 @@ export class ScreenshotRecorder {
    * Animated click (simplified for screenshots)
    */
   private async clickAnimated(page: Page, selector: string, options?: ClickOptions): Promise<void> {
+    const force = options?.force ?? false;
+    const scrollIntoView = options?.scrollIntoView ?? true;
+
     try {
+      // Auto-scroll element into view first
+      if (scrollIntoView) {
+        await page.evaluate((sel) => {
+          const el = document.querySelector(sel);
+          if (el) {
+            el.scrollIntoView({ behavior: 'instant', block: 'center' });
+          }
+        }, selector);
+        await page.waitForTimeout(100);
+      }
+
+      // Check element exists
+      const element = await page.$(selector);
+      if (!element) {
+        throw new Error(`clickAnimated: Element not found for selector "${selector}"`);
+      }
+
+      // Check element has bounding box (is renderable)
+      const box = await element.boundingBox();
+      if (!box && !force) {
+        const state = await page.evaluate((sel) => {
+          const el = document.querySelector(sel);
+          if (!el) return { exists: false };
+          const style = window.getComputedStyle(el);
+          return {
+            exists: true,
+            display: style.display,
+            visibility: style.visibility,
+            opacity: style.opacity,
+            offsetParent: !!(el as HTMLElement).offsetParent,
+          };
+        }, selector);
+
+        throw new Error(
+          `clickAnimated: Element "${selector}" has no bounding box. ` +
+          `State: display=${state.display}, visibility=${state.visibility}, ` +
+          `opacity=${state.opacity}, offsetParent=${state.offsetParent}`
+        );
+      }
+
       await this.moveTo(page, selector, { duration: options?.moveDuration ?? 100 });
       await page.waitForTimeout(options?.hoverDuration ?? 100);
-      await page.click(selector);
-    } catch {
-      logger.warn(`Failed to click element: ${selector}`);
+      await page.click(selector, { force });
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('clickAnimated:')) {
+        throw error;
+      }
+      logger.warn(`Failed to click element: ${selector} - ${error}`);
+      throw error;
     }
   }
 

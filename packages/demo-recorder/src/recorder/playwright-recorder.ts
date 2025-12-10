@@ -13,6 +13,7 @@ import type {
   ScrollOptions,
   IntroOptions,
   OutroOptions,
+  WaitForEnabledOptions,
 } from '../core/types';
 import { DEFAULT_VIDEO_SETTINGS } from '../core/types';
 import { logger } from '../utils/logger';
@@ -20,6 +21,10 @@ import { logger } from '../utils/logger';
 export interface RecorderOptions {
   /** Run browser in headed mode (visible window) */
   headed?: boolean;
+  /** Enable debug mode with selector highlighting and logging */
+  debug?: boolean;
+  /** Pause for keypress between actions (requires debug mode) */
+  stepThrough?: boolean;
 }
 
 export class PlaywrightRecorder {
@@ -127,6 +132,37 @@ export class PlaywrightRecorder {
           // In video mode, screenshots are a no-op (video captures everything)
           // Return empty string since no file is created
           return '';
+        },
+        waitForEnabled: async (selector: string, options?: WaitForEnabledOptions) => {
+          const timeout = options?.timeout ?? 30000;
+          const interval = options?.interval ?? 100;
+          const startTime = Date.now();
+
+          while (Date.now() - startTime < timeout) {
+            const isEnabled = await page.evaluate((sel) => {
+              const el = document.querySelector(sel) as HTMLButtonElement | HTMLInputElement;
+              if (!el) return false;
+              // Check disabled attribute and aria-disabled
+              return !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+            }, selector);
+
+            if (isEnabled) return;
+            await page.waitForTimeout(interval);
+          }
+          throw new Error(`waitForEnabled: Element "${selector}" did not become enabled within ${timeout}ms`);
+        },
+        exists: async (selector: string) => {
+          const element = await page.$(selector);
+          return element !== null;
+        },
+        isVisible: async (selector: string) => {
+          try {
+            const element = await page.$(selector);
+            if (!element) return false;
+            return await element.isVisible();
+          } catch {
+            return false;
+          }
         },
       };
 
@@ -476,10 +512,55 @@ export class PlaywrightRecorder {
   private async clickAnimated(page: Page, selector: string, options?: ClickOptions): Promise<void> {
     const hoverDuration = options?.hoverDuration ?? 200;
     const moveDuration = options?.moveDuration ?? 400;
+    const force = options?.force ?? false;
+    const scrollIntoView = options?.scrollIntoView ?? true;
 
     try {
-      // Move cursor to element
-      await this.moveTo(page, selector, { duration: moveDuration });
+      // Auto-scroll element into view first
+      if (scrollIntoView) {
+        await page.evaluate((sel) => {
+          const el = document.querySelector(sel);
+          if (el) {
+            el.scrollIntoView({ behavior: 'instant', block: 'center' });
+          }
+        }, selector);
+        await page.waitForTimeout(100);
+      }
+
+      // Check element exists
+      const element = await page.$(selector);
+      if (!element) {
+        throw new Error(`clickAnimated: Element not found for selector "${selector}"`);
+      }
+
+      // Check element has bounding box (is renderable)
+      const box = await element.boundingBox();
+      if (!box && !force) {
+        // Gather diagnostic info for better error message
+        const state = await page.evaluate((sel) => {
+          const el = document.querySelector(sel);
+          if (!el) return { exists: false };
+          const style = window.getComputedStyle(el);
+          return {
+            exists: true,
+            display: style.display,
+            visibility: style.visibility,
+            opacity: style.opacity,
+            offsetParent: !!(el as HTMLElement).offsetParent,
+          };
+        }, selector);
+
+        throw new Error(
+          `clickAnimated: Element "${selector}" has no bounding box. ` +
+          `State: display=${state.display}, visibility=${state.visibility}, ` +
+          `opacity=${state.opacity}, offsetParent=${state.offsetParent}`
+        );
+      }
+
+      // Move cursor to element (skip animation if force mode)
+      if (!force) {
+        await this.moveTo(page, selector, { duration: moveDuration });
+      }
 
       // Brief hover
       await page.waitForTimeout(hoverDuration);
@@ -522,14 +603,19 @@ export class PlaywrightRecorder {
         setTimeout(() => ripple.remove(), 400);
       }, selector);
 
-      // Perform the click
-      await page.click(selector);
+      // Perform the click (with force option if specified)
+      await page.click(selector, { force });
 
       // Reset cursor to arrow after click
       await page.waitForTimeout(100);
       await this.setCursorStyle(page, 'arrow');
-    } catch {
-      logger.warn(`Failed to click element: ${selector}`);
+    } catch (error) {
+      // Re-throw our detailed errors
+      if (error instanceof Error && error.message.startsWith('clickAnimated:')) {
+        throw error;
+      }
+      logger.warn(`Failed to click element: ${selector} - ${error}`);
+      throw error;
     }
   }
 
