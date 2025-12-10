@@ -12,6 +12,8 @@ CLI tools for keyword research, content creation, and social media management.
 | Publish & manage YouTube Shorts | `youtube` |
 | Post tweets & manage X/Twitter content | `twitter` |
 | Post updates & manage LinkedIn content | `linkedin` |
+| Create & manage Google Forms | `gforms` |
+| Use all tools via Claude Code | `mcp-server` |
 
 ## Tools
 
@@ -81,6 +83,23 @@ make install          # Install all CLI tools
 make doppler-connect  # Connect to Doppler for secrets
 make check            # Verify setup
 ```
+
+## Claude Code Integration (MCP)
+
+Install the MCP server to use all tools directly from Claude Code:
+```bash
+make install-mcp      # Install MCP server + configure Claude Code
+# Restart Claude Code
+make uninstall-mcp    # Remove MCP server
+```
+
+Once installed, Claude can:
+- Search keywords (`autocomplete`)
+- Post to Twitter/LinkedIn
+- Search Reddit for market research
+- Manage YouTube videos
+- Record demos & screenshots
+- Create/manage Google Forms
 
 ## Secrets
 

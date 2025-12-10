@@ -1,4 +1,4 @@
-.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin
+.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin install-mcp uninstall-mcp
 
 # Default target
 help:
@@ -8,6 +8,8 @@ help:
 	@echo "  make install          Install all packages (Node + Python)"
 	@echo "  make install-node     Install Node packages (autocomplete-cli, demo-recorder, youtube-cli, twitter-cli)"
 	@echo "  make install-python   Install Python packages only (reddit-market-research)"
+	@echo "  make install-mcp      Install MCP server + all CLI tools for Claude Code"
+	@echo "  make uninstall-mcp    Uninstall MCP server and all CLI tools"
 	@echo ""
 	@echo "Secrets Management:"
 	@echo "  make install-doppler  Install Doppler CLI"
@@ -51,6 +53,22 @@ install-python:
 	@echo "Installing reddit-market-research..."
 	uv tool install --force ./packages/reddit-market-research
 	@echo "Done! Run 'reddit-market-research --help' to verify."
+
+install-mcp: install-node install-python
+	@echo "Installing MCP server for Claude Code..."
+	cd packages/mcp-server && npm install && npm run build && npm link --force
+	@./scripts/configure-claude-mcp.sh add
+	@echo ""
+	@echo "Done! Restart Claude Code to use social-tools."
+
+uninstall-mcp:
+	@echo "Uninstalling MCP server and CLI tools..."
+	@./scripts/configure-claude-mcp.sh remove
+	-npm uninstall -g @neonwatty/autocomplete-cli @neonwatty/demo-recorder @neonwatty/youtube-cli @neonwatty/twitter-cli @neonwatty/linkedin-cli @neonwatty/google-forms-cli
+	-rm -f "$$(npm root -g)/../bin/social-tools-mcp" 2>/dev/null || true
+	-rm -rf "$$(npm root -g)/@neonwatty/social-tools-mcp" 2>/dev/null || true
+	-uv tool uninstall reddit-market-research 2>/dev/null || pipx uninstall reddit-market-research 2>/dev/null || pip uninstall -y reddit-market-research 2>/dev/null || true
+	@echo "Done! All CLI tools and MCP server have been uninstalled."
 
 # ============================================================================
 # Secrets Management
@@ -188,6 +206,13 @@ check:
 		echo "  [OK] reddit-market-research"; \
 	else \
 		echo "  [MISSING] reddit-market-research - run 'make install-python'"; \
+	fi
+	@echo ""
+	@echo "MCP server:"
+	@if command -v social-tools-mcp &> /dev/null; then \
+		echo "  [OK] social-tools-mcp"; \
+	else \
+		echo "  [MISSING] social-tools-mcp - run 'make install-mcp'"; \
 	fi
 	@echo ""
 	@echo "Secrets configuration:"
