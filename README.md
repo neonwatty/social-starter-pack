@@ -13,6 +13,7 @@ Keyword & market research tools in a unified monorepo.
 | [twitter-cli](./packages/twitter-cli) | Post tweets & manage X/Twitter content | npm |
 | [linkedin-cli](./packages/linkedin-cli) | Post updates & manage LinkedIn content | npm |
 | [google-forms-cli](./packages/google-forms-cli) | Create forms, add questions, export responses | npm |
+| [mcp-server](./packages/mcp-server) | MCP server for Claude Code integration | npm |
 
 ## Quick Start
 
@@ -34,11 +35,24 @@ make check
 ```
 make help             # All commands
 make install          # Install all CLI tools
+make install-mcp      # Install MCP server for Claude Code
+make uninstall-mcp    # Uninstall MCP server
 make doppler-connect  # Connect to Doppler for secrets
 make setup-secrets    # Create local .env file
 make check            # Verify setup
 make test             # Run all package tests
 ```
+
+## Claude Code Integration
+
+Use all social tools directly from Claude Code via the MCP server:
+
+```bash
+make install-mcp      # Install & configure MCP server
+# Restart Claude Code
+```
+
+This gives Claude access to: autocomplete, YouTube, Twitter, LinkedIn, Reddit search, demo recording, and Google Forms tools.
 
 ## Development
 

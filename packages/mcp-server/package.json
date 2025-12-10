@@ -1,0 +1,35 @@
+{
+  "name": "@neonwatty/social-tools-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for social-starter-pack CLI tools",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "social-tools-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "mcp",
+    "claude",
+    "social-media",
+    "cli"
+  ],
+  "license": "MIT"
+}
