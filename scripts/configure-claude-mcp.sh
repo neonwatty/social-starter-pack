@@ -8,9 +8,39 @@ CLAUDE_CONFIG="$HOME/.claude.json"
 add_config() {
     echo "Adding social-tools MCP to Claude Code config..."
 
+    # Detect if Doppler is configured for this project
+    local use_doppler=false
+    if command -v doppler &> /dev/null; then
+        # Check if doppler is set up for social-starter-pack
+        if doppler secrets --project social-starter-pack --config dev &> /dev/null 2>&1; then
+            use_doppler=true
+            echo "Detected Doppler configuration - will use doppler run for secrets"
+        fi
+    fi
+
+    # Build the MCP server config based on whether Doppler is available
+    local mcp_config
+    if [ "$use_doppler" = true ]; then
+        mcp_config='{"command": "doppler", "args": ["run", "--project", "social-starter-pack", "--config", "dev", "--", "social-tools-mcp"]}'
+    else
+        mcp_config='{"command": "social-tools-mcp"}'
+    fi
+
     if [ ! -f "$CLAUDE_CONFIG" ]; then
         # Create new config file
-        cat > "$CLAUDE_CONFIG" << 'EOF'
+        if [ "$use_doppler" = true ]; then
+            cat > "$CLAUDE_CONFIG" << 'EOF'
+{
+  "mcpServers": {
+    "social-tools": {
+      "command": "doppler",
+      "args": ["run", "--project", "social-starter-pack", "--config", "dev", "--", "social-tools-mcp"]
+    }
+  }
+}
+EOF
+        else
+            cat > "$CLAUDE_CONFIG" << 'EOF'
 {
   "mcpServers": {
     "social-tools": {
@@ -19,18 +49,30 @@ add_config() {
   }
 }
 EOF
+        fi
         echo "Created $CLAUDE_CONFIG with social-tools MCP server."
     else
         # Check if jq is available
         if ! command -v jq &> /dev/null; then
             echo "Warning: jq not installed. Please manually add to $CLAUDE_CONFIG:"
-            echo '  "mcpServers": { "social-tools": { "command": "social-tools-mcp" } }'
+            if [ "$use_doppler" = true ]; then
+                echo '  "mcpServers": { "social-tools": { "command": "doppler", "args": ["run", "--project", "social-starter-pack", "--config", "dev", "--", "social-tools-mcp"] } }'
+            else
+                echo '  "mcpServers": { "social-tools": { "command": "social-tools-mcp" } }'
+            fi
             return 0
         fi
 
         # Check if social-tools already exists
         if jq -e '.mcpServers["social-tools"]' "$CLAUDE_CONFIG" &> /dev/null; then
             echo "social-tools MCP already configured in $CLAUDE_CONFIG"
+            echo "Updating configuration..."
+            tmp=$(mktemp)
+            jq --argjson config "$mcp_config" '.mcpServers["social-tools"] = $config' "$CLAUDE_CONFIG" > "$tmp"
+            mv "$tmp" "$CLAUDE_CONFIG"
+            echo "Updated social-tools MCP in $CLAUDE_CONFIG"
+            echo ""
+            echo "Restart Claude Code for changes to take effect."
             return 0
         fi
 
@@ -38,10 +80,10 @@ EOF
         tmp=$(mktemp)
         if jq -e '.mcpServers' "$CLAUDE_CONFIG" &> /dev/null; then
             # mcpServers exists, add to it
-            jq '.mcpServers["social-tools"] = {"command": "social-tools-mcp"}' "$CLAUDE_CONFIG" > "$tmp"
+            jq --argjson config "$mcp_config" '.mcpServers["social-tools"] = $config' "$CLAUDE_CONFIG" > "$tmp"
         else
             # mcpServers doesn't exist, create it
-            jq '. + {"mcpServers": {"social-tools": {"command": "social-tools-mcp"}}}' "$CLAUDE_CONFIG" > "$tmp"
+            jq --argjson config "$mcp_config" '. + {"mcpServers": {"social-tools": $config}}' "$CLAUDE_CONFIG" > "$tmp"
         fi
         mv "$tmp" "$CLAUDE_CONFIG"
         echo "Added social-tools MCP to $CLAUDE_CONFIG"
