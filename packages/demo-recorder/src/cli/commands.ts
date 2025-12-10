@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import ora from 'ora';
+import { chromium } from 'playwright';
 import { PlaywrightRecorder } from '../recorder/playwright-recorder';
 import { ScreenshotRecorder } from '../recorder/screenshot-recorder';
 import { convertToMp4, checkFfmpegInstalled, extractThumbnail } from '../recorder/video-processor';
@@ -9,12 +10,20 @@ import { loadDemo, listDemos } from '../core/demo-loader';
 import { logger } from '../utils/logger';
 import { generateMarkdownFromDirectory } from '../utils/markdown-generator';
 import { generateEmbedFile } from '../utils/embed-generator';
-import { MOBILE_PRESETS, DESKTOP_PRESETS } from '../core/viewports';
+import { MOBILE_PRESETS, DESKTOP_PRESETS, parseViewport } from '../core/viewports';
 import type { ScreenshotSettings } from '../core/types';
 
 export interface RecordOptions {
   output: string;
   convert: boolean;
+  headed: boolean;
+  headedDebug?: boolean;
+  stepThrough?: boolean;
+}
+
+export interface InspectOptions {
+  viewport?: string;
+  format: 'table' | 'json';
   headed: boolean;
 }
 
@@ -96,7 +105,11 @@ export async function recordCommand(demoFile: string, options: RecordOptions): P
 
     // Record the video
     spinner.start('Recording demo...');
-    const recorder = new PlaywrightRecorder({ headed: options.headed });
+    const recorder = new PlaywrightRecorder({
+      headed: options.headed || options.headedDebug,
+      debug: options.headedDebug,
+      stepThrough: options.stepThrough,
+    });
     const { videoPath, durationMs } = await recorder.record(demo, options.output);
     spinner.succeed(`Recording complete (${(durationMs / 1000).toFixed(1)}s)`);
 
@@ -412,6 +425,167 @@ export async function viewportsCommand(): Promise<void> {
 
   console.log('\nCustom format: WIDTHxHEIGHT (e.g., 1024x768)\n');
   console.log('Usage: demo-recorder screenshot <demo> --viewport iphone-15-pro\n');
+}
+
+/**
+ * Inspect command - inspect a page and list all interactive elements
+ */
+export async function inspectCommand(url: string, options: InspectOptions): Promise<void> {
+  const spinner = ora('Launching browser...').start();
+
+  try {
+    // Parse viewport if provided
+    let width = 1920;
+    let height = 1080;
+    if (options.viewport) {
+      const preset = parseViewport(options.viewport);
+      if (preset) {
+        width = preset.width;
+        height = preset.height;
+      }
+    }
+
+    // Launch browser
+    const browser = await chromium.launch({
+      headless: !options.headed,
+    });
+
+    const context = await browser.newContext({
+      viewport: { width, height },
+    });
+
+    const page = await context.newPage();
+
+    spinner.text = 'Navigating to page...';
+    await page.goto(url, { waitUntil: 'networkidle' });
+
+    spinner.text = 'Inspecting page elements...';
+
+    // Collect all interactive elements
+    const elements = await page.evaluate(() => {
+      interface InspectedElement {
+        selector: string;
+        type: string;
+        text: string;
+        visible: boolean;
+        enabled: boolean;
+        options?: string[];
+      }
+
+      const results: InspectedElement[] = [];
+
+      // All elements with data-testid
+      document.querySelectorAll('[data-testid]').forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const testId = el.getAttribute('data-testid');
+        results.push({
+          selector: `[data-testid="${testId}"]`,
+          type: 'testid',
+          text: htmlEl.innerText?.trim().substring(0, 40) || '',
+          visible: htmlEl.offsetParent !== null,
+          enabled: !(htmlEl as HTMLButtonElement).disabled,
+        });
+      });
+
+      // Buttons without testid
+      document.querySelectorAll('button:not([data-testid])').forEach((el, idx) => {
+        const btn = el as HTMLButtonElement;
+        if (!el.closest('[data-testid]')) {
+          results.push({
+            selector: `button:nth-of-type(${idx + 1})`,
+            type: 'button',
+            text: btn.innerText?.trim().substring(0, 40) || '',
+            visible: btn.offsetParent !== null,
+            enabled: !btn.disabled,
+          });
+        }
+      });
+
+      // Select elements
+      document.querySelectorAll('select').forEach((el) => {
+        const sel = el as HTMLSelectElement;
+        const testId = sel.getAttribute('data-testid');
+        const selector = testId ? `[data-testid="${testId}"]` : sel.id ? `#${sel.id}` : 'select';
+        const optionTexts = Array.from(sel.options).slice(0, 5).map(o => o.text);
+        results.push({
+          selector,
+          type: 'select',
+          text: `(${sel.options.length} options)`,
+          visible: sel.offsetParent !== null,
+          enabled: !sel.disabled,
+          options: optionTexts,
+        });
+      });
+
+      // Input elements (text, email, etc.)
+      document.querySelectorAll('input[type="text"], input[type="email"], input[type="search"], input[type="password"]').forEach((el) => {
+        const input = el as HTMLInputElement;
+        const testId = input.getAttribute('data-testid');
+        const selector = testId ? `[data-testid="${testId}"]` : input.id ? `#${input.id}` : input.name ? `input[name="${input.name}"]` : 'input';
+        results.push({
+          selector,
+          type: 'input',
+          text: input.placeholder || '',
+          visible: input.offsetParent !== null,
+          enabled: !input.disabled,
+        });
+      });
+
+      // Links
+      document.querySelectorAll('a[href]').forEach((el) => {
+        const link = el as HTMLAnchorElement;
+        const testId = link.getAttribute('data-testid');
+        if (testId || link.innerText.trim()) {
+          const selector = testId ? `[data-testid="${testId}"]` : `a:has-text("${link.innerText.trim().substring(0, 20)}")`;
+          results.push({
+            selector,
+            type: 'link',
+            text: link.innerText?.trim().substring(0, 40) || link.href.substring(0, 40),
+            visible: link.offsetParent !== null,
+            enabled: true,
+          });
+        }
+      });
+
+      return results;
+    });
+
+    await browser.close();
+    spinner.succeed(`Found ${elements.length} interactive elements`);
+
+    // Output results
+    if (options.format === 'json') {
+      console.log(JSON.stringify(elements, null, 2));
+    } else {
+      // Table format
+      console.log('\n' + '─'.repeat(100));
+      console.log(
+        'TYPE'.padEnd(10) +
+        'SELECTOR'.padEnd(50) +
+        'TEXT'.padEnd(25) +
+        'VISIBLE'.padEnd(8) +
+        'ENABLED'
+      );
+      console.log('─'.repeat(100));
+
+      for (const el of elements) {
+        const visible = el.visible ? '✓' : '✗';
+        const enabled = el.enabled ? '✓' : '✗';
+        console.log(
+          el.type.padEnd(10) +
+          el.selector.substring(0, 48).padEnd(50) +
+          el.text.substring(0, 23).padEnd(25) +
+          visible.padEnd(8) +
+          enabled
+        );
+      }
+      console.log('─'.repeat(100) + '\n');
+    }
+  } catch (error) {
+    spinner.fail('Inspection failed');
+    logger.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
 
 /**

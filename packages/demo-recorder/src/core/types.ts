@@ -38,6 +38,20 @@ export interface ClickOptions {
   hoverDuration?: number;
   /** Cursor move duration in ms (default: 400) */
   moveDuration?: number;
+  /** Skip visibility checks and force click (default: false) */
+  force?: boolean;
+  /** Auto-scroll element into view before clicking (default: true) */
+  scrollIntoView?: boolean;
+}
+
+/**
+ * Options for waitForEnabled helper
+ */
+export interface WaitForEnabledOptions {
+  /** Timeout in ms (default: 30000) */
+  timeout?: number;
+  /** Polling interval in ms (default: 100) */
+  interval?: number;
 }
 
 /**
@@ -183,6 +197,12 @@ export interface DemoContext {
   scrollToBottom: (options?: ScrollOptions) => Promise<void>;
   /** Manually capture a screenshot (available in both video and screenshot modes) */
   screenshot: (name?: string) => Promise<string>;
+  /** Wait for element to become enabled (not disabled) */
+  waitForEnabled: (selector: string, options?: WaitForEnabledOptions) => Promise<void>;
+  /** Check if element exists in DOM (returns boolean, does not throw) */
+  exists: (selector: string) => Promise<boolean>;
+  /** Check if element is visible (returns boolean, does not throw) */
+  isVisible: (selector: string) => Promise<boolean>;
 }
 
 /**

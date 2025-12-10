@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { recordCommand, listCommand, createCommand, screenshotCommand, thumbnailCommand, gifCommand, markdownCommand, embedCommand, viewportsCommand } from './cli/commands';
+import { recordCommand, listCommand, createCommand, screenshotCommand, thumbnailCommand, gifCommand, markdownCommand, embedCommand, viewportsCommand, inspectCommand } from './cli/commands';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pkg = require('../package.json');
@@ -32,6 +32,8 @@ program
   .option('-o, --output <dir>', 'Output directory', './output')
   .option('--no-convert', 'Skip WebM to MP4 conversion')
   .option('--headed', 'Run browser in headed mode (visible window)')
+  .option('--headed-debug', 'Headed mode with selector highlighting and logging')
+  .option('--step-through', 'Pause for keypress between actions (requires --headed-debug)')
   .action(recordCommand);
 
 // demo-recorder screenshot <demo-file>
@@ -109,5 +111,14 @@ program
   .command('viewports')
   .description('List available viewport presets for mobile/desktop')
   .action(viewportsCommand);
+
+// demo-recorder inspect <url>
+program
+  .command('inspect <url>')
+  .description('Inspect a page and list all interactive elements')
+  .option('--viewport <preset>', 'Viewport preset (e.g., iphone-15-pro) or WxH')
+  .option('--format <format>', 'Output format: table, json', 'table')
+  .option('--headed', 'Run browser in headed mode')
+  .action(inspectCommand);
 
 program.parse();
