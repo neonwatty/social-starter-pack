@@ -4,7 +4,6 @@
 set -e
 
 CLAUDE_CONFIG="$HOME/.claude.json"
-MCP_NAME="social-tools"
 
 add_config() {
     echo "Adding social-tools MCP to Claude Code config..."
