@@ -19,7 +19,7 @@ import { generateMarkdownFromDirectory } from '../utils/markdown-generator';
 import { generateEmbedFile } from '../utils/embed-generator';
 import { MOBILE_PRESETS, DESKTOP_PRESETS, parseViewport, VIDEO_PRESETS } from '../core/viewports';
 import type { ScreenshotSettings } from '../core/types';
-import { inspectPage, formatInspectionTable, type PageInspection } from '../core/page-inspector';
+import { inspectPage, formatInspectionTable } from '../core/page-inspector';
 import { validateDemo, formatValidationResult, extractSelectorsFromCode } from '../core/demo-validator';
 import { DebugRunner } from '../recorder/debug-runner';
 

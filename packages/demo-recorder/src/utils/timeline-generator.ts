@@ -431,7 +431,7 @@ function generateTimelineHtml(analysis: VideoAnalysis): string {
       <h2>Trim Suggestions (${suggestions.length})</h2>
       ${suggestions.length > 0 ? `
         <div class="suggestions-list">
-          ${suggestions.map((s, i) => `
+          ${suggestions.map((s) => `
             <div class="suggestion-item">
               <div class="suggestion-info">
                 <div class="suggestion-time">${formatTime(s.startSec)} - ${formatTime(s.endSec)}</div>

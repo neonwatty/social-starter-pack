@@ -21,7 +21,6 @@ import type {
   RecordingMetadata,
   ActionElementState,
   ActionScreenshots,
-  ActionResult,
   RecordingSummary,
 } from '../core/types';
 import { DEFAULT_VIDEO_SETTINGS } from '../core/types';
