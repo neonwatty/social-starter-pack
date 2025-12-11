@@ -129,7 +129,8 @@ export class DebugRunner {
    * Create a debug context that wraps each helper with pause functionality
    */
   private createDebugContext(page: Page): DemoContext {
-    const self = this;
+    // Use arrow functions to preserve `this` context
+    const executeStep = this.executeStep.bind(this);
 
     return {
       page,
@@ -137,13 +138,13 @@ export class DebugRunner {
       context: this.context!,
 
       wait: async (ms: number): Promise<void> => {
-        await self.executeStep(page, { action: 'wait', args: `${ms}ms` }, async () => {
+        await executeStep(page, { action: 'wait', args: `${ms}ms` }, async () => {
           await page.waitForTimeout(ms);
         });
       },
 
       highlight: async (selector: string, durationMs = 500): Promise<void> => {
-        await self.executeStep(page, { action: 'highlight', selector }, async () => {
+        await executeStep(page, { action: 'highlight', selector }, async () => {
           await page.evaluate(
             ({ sel, dur }) => {
               const element = document.querySelector(sel);
@@ -171,25 +172,25 @@ export class DebugRunner {
       },
 
       hideDevTools: async (): Promise<void> => {
-        await self.executeStep(page, { action: 'hideDevTools' }, async () => {
+        await executeStep(page, { action: 'hideDevTools' }, async () => {
           // No-op in debug mode
         });
       },
 
       typeAnimated: async (selector: string, text: string, _options?: TypeOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'typeAnimated', selector, args: `"${text}"` }, async () => {
+        await executeStep(page, { action: 'typeAnimated', selector, args: `"${text}"` }, async () => {
           await page.fill(selector, text);
         });
       },
 
       moveTo: async (selector: string, _options?: MoveOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'moveTo', selector }, async () => {
+        await executeStep(page, { action: 'moveTo', selector }, async () => {
           await page.hover(selector);
         });
       },
 
       clickAnimated: async (selector: string, options?: ClickOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'clickAnimated', selector }, async () => {
+        await executeStep(page, { action: 'clickAnimated', selector }, async () => {
           if (options?.scrollIntoView !== false) {
             await page.locator(selector).scrollIntoViewIfNeeded();
           }
@@ -198,7 +199,7 @@ export class DebugRunner {
       },
 
       zoomHighlight: async (selector: string, _options?: ZoomOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'zoomHighlight', selector }, async () => {
+        await executeStep(page, { action: 'zoomHighlight', selector }, async () => {
           await page.evaluate((sel) => {
             const element = document.querySelector(sel);
             if (!element) return;
@@ -224,38 +225,38 @@ export class DebugRunner {
       },
 
       scrollToElement: async (selector: string, _options?: ScrollOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'scrollToElement', selector }, async () => {
+        await executeStep(page, { action: 'scrollToElement', selector }, async () => {
           await page.locator(selector).scrollIntoViewIfNeeded();
         });
       },
 
       scrollBy: async (pixels: number, _options?: ScrollOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'scrollBy', args: `${pixels}px` }, async () => {
+        await executeStep(page, { action: 'scrollBy', args: `${pixels}px` }, async () => {
           await page.evaluate((px) => window.scrollBy(0, px), pixels);
         });
       },
 
       scrollToTop: async (_options?: ScrollOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'scrollToTop' }, async () => {
+        await executeStep(page, { action: 'scrollToTop' }, async () => {
           await page.evaluate(() => window.scrollTo(0, 0));
         });
       },
 
       scrollToBottom: async (_options?: ScrollOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'scrollToBottom' }, async () => {
+        await executeStep(page, { action: 'scrollToBottom' }, async () => {
           await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
         });
       },
 
       screenshot: async (_name?: string): Promise<string> => {
-        const result = await self.executeStep(page, { action: 'screenshot' }, async () => {
+        const result = await executeStep(page, { action: 'screenshot' }, async () => {
           return '';
         });
         return result ?? '';
       },
 
       waitForEnabled: async (selector: string, options?: WaitForEnabledOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'waitForEnabled', selector }, async () => {
+        await executeStep(page, { action: 'waitForEnabled', selector }, async () => {
           const timeout = options?.timeout ?? 30000;
           await page.waitForSelector(`${selector}:not([disabled])`, { timeout });
         });
@@ -277,14 +278,14 @@ export class DebugRunner {
       },
 
       waitForHydration: async (_options?: WaitForHydrationOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'waitForHydration' }, async () => {
+        await executeStep(page, { action: 'waitForHydration' }, async () => {
           await page.waitForLoadState('networkidle');
           await page.waitForTimeout(500);
         });
       },
 
       waitForText: async (selector: string, text: string, options?: WaitForTextOptions): Promise<void> => {
-        await self.executeStep(page, { action: 'waitForText', selector, args: `"${text}"` }, async () => {
+        await executeStep(page, { action: 'waitForText', selector, args: `"${text}"` }, async () => {
           const timeout = options?.timeout ?? 30000;
           await page.waitForFunction(
             ({ sel, txt }) => {
@@ -298,7 +299,7 @@ export class DebugRunner {
       },
 
       waitForTextChange: async (selector: string, options?: WaitForTextChangeOptions): Promise<string> => {
-        const result = await self.executeStep(page, { action: 'waitForTextChange', selector }, async () => {
+        const result = await executeStep(page, { action: 'waitForTextChange', selector }, async () => {
           const timeout = options?.timeout ?? 30000;
           const initialText = options?.initialText ?? await page.textContent(selector) ?? '';
           await page.waitForFunction(
@@ -315,7 +316,7 @@ export class DebugRunner {
       },
 
       uploadFile: async (selector: string, filePath: string): Promise<void> => {
-        await self.executeStep(page, { action: 'uploadFile', selector, args: filePath }, async () => {
+        await executeStep(page, { action: 'uploadFile', selector, args: filePath }, async () => {
           const fileInput = await page.$(selector);
           if (!fileInput) throw new Error(`File input not found: ${selector}`);
           await fileInput.setInputFiles(filePath);
@@ -323,7 +324,7 @@ export class DebugRunner {
       },
 
       waitForDownload: async (options?: { timeout?: number }): Promise<string> => {
-        const result = await self.executeStep(page, { action: 'waitForDownload' }, async () => {
+        const result = await executeStep(page, { action: 'waitForDownload' }, async () => {
           const timeout = options?.timeout ?? 60000;
           const download = await page.waitForEvent('download', { timeout });
           return await download.path() ?? '';

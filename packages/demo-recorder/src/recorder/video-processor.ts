@@ -583,7 +583,7 @@ export async function analyzeFrameDifferences(
     '-',
   ];
 
-  const result = await new Promise<string>((resolve, reject) => {
+  await new Promise<string>((resolve, reject) => {
     const ffmpeg = spawn('ffmpeg', ffmpegArgs);
     let stderr = '';
 
@@ -859,10 +859,10 @@ export async function analyzeVideo(options: AnalyzeOptions): Promise<VideoAnalys
 export async function trimVideo(options: TrimOptions): Promise<TrimResult> {
   const {
     inputPath,
-    minPauseToKeep = 1,
     keepOriginal = true,
     analysisPath,
   } = options;
+  // Note: minPauseToKeep is accepted in options but not yet implemented
 
   // Load analysis
   let analysis = options.analysis;

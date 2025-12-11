@@ -1,6 +1,5 @@
 import { chromium, Page } from 'playwright';
 import type { DemoDefinition } from './types';
-import { inspectPage, getBestSelector } from './page-inspector';
 
 /**
  * Result of validating a single selector
