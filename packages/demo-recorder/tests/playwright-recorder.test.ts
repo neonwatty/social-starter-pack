@@ -18,7 +18,10 @@ vi.mock('playwright', () => ({
           },
           $: vi.fn().mockResolvedValue({
             boundingBox: vi.fn().mockResolvedValue({ x: 100, y: 100, width: 50, height: 30 }),
+            isVisible: vi.fn().mockResolvedValue(true),
+            textContent: vi.fn().mockResolvedValue('Test text'),
           }),
+          screenshot: vi.fn().mockResolvedValue(undefined),
           mouse: {
             move: vi.fn().mockResolvedValue(undefined),
           },
@@ -38,6 +41,7 @@ vi.mock('fs/promises', () => ({
   default: {
     mkdir: vi.fn().mockResolvedValue(undefined),
     readdir: vi.fn().mockResolvedValue(['test-video.webm']),
+    writeFile: vi.fn().mockResolvedValue(undefined),
   },
 }));
 

@@ -171,11 +171,53 @@ export const DESKTOP_PRESETS: Record<string, ViewportPreset> = {
 };
 
 /**
+ * Video format presets for different platforms
+ */
+export const VIDEO_PRESETS: Record<string, ViewportPreset> = {
+  'youtube-shorts': {
+    name: 'YouTube Shorts (9:16 vertical)',
+    width: 1080,
+    height: 1920,
+  },
+  'youtube': {
+    name: 'YouTube (16:9 horizontal)',
+    width: 1920,
+    height: 1080,
+  },
+  'twitter': {
+    name: 'Twitter/X (16:9)',
+    width: 1200,
+    height: 675,
+  },
+  'linkedin': {
+    name: 'LinkedIn (16:9)',
+    width: 1200,
+    height: 675,
+  },
+  'square': {
+    name: 'Square (1:1)',
+    width: 1080,
+    height: 1080,
+  },
+  'instagram-reel': {
+    name: 'Instagram Reel (9:16)',
+    width: 1080,
+    height: 1920,
+  },
+  'tiktok': {
+    name: 'TikTok (9:16)',
+    width: 1080,
+    height: 1920,
+  },
+};
+
+/**
  * All viewport presets combined
  */
 export const VIEWPORT_PRESETS: Record<string, ViewportPreset> = {
   ...MOBILE_PRESETS,
   ...DESKTOP_PRESETS,
+  ...VIDEO_PRESETS,
 };
 
 /**
@@ -204,6 +246,20 @@ export function listMobilePresets(): string[] {
  */
 export function listDesktopPresets(): string[] {
   return Object.keys(DESKTOP_PRESETS);
+}
+
+/**
+ * List video format preset names only
+ */
+export function listVideoPresets(): string[] {
+  return Object.keys(VIDEO_PRESETS);
+}
+
+/**
+ * Get a video preset by name
+ */
+export function getVideoPreset(name: string): ViewportPreset | undefined {
+  return VIDEO_PRESETS[name.toLowerCase()];
 }
 
 /**

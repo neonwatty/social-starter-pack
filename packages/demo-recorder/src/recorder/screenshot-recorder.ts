@@ -14,6 +14,9 @@ import type {
   ZoomOptions,
   ScrollOptions,
   WaitForEnabledOptions,
+  WaitForTextOptions,
+  WaitForTextChangeOptions,
+  WaitForHydrationOptions,
 } from '../core/types';
 import { DEFAULT_VIDEO_SETTINGS, DEFAULT_SCREENSHOT_SETTINGS } from '../core/types';
 import { logger } from '../utils/logger';
@@ -246,6 +249,83 @@ export class ScreenshotRecorder {
         } catch {
           return false;
         }
+      },
+
+      // SPA & Async operation helpers
+
+      waitForHydration: async (options?: WaitForHydrationOptions) => {
+        const timeout = options?.timeout ?? 10000;
+        await Promise.race([
+          page.waitForFunction(
+            () => {
+              const root = document.getElementById('__next') || document.getElementById('root') || document.body;
+              return root && !document.querySelector('[data-reactroot]');
+            },
+            { timeout }
+          ).catch(() => {}),
+          page.waitForLoadState('networkidle').then(() => page.waitForTimeout(500)),
+        ]);
+      },
+
+      waitForText: async (selector: string, text: string, options?: WaitForTextOptions) => {
+        const timeout = options?.timeout ?? 30000;
+        const interval = options?.interval ?? 100;
+        const startTime = Date.now();
+
+        while (Date.now() - startTime < timeout) {
+          const currentText = await page.evaluate((sel) => {
+            const el = document.querySelector(sel);
+            return el?.textContent?.trim() || '';
+          }, selector);
+
+          if (currentText.includes(text)) return;
+          await page.waitForTimeout(interval);
+        }
+        throw new Error(`waitForText: Element "${selector}" did not contain "${text}" within ${timeout}ms`);
+      },
+
+      waitForTextChange: async (selector: string, options?: WaitForTextChangeOptions) => {
+        const timeout = options?.timeout ?? 30000;
+        const interval = options?.interval ?? 100;
+
+        let initialText = options?.initialText;
+        if (initialText === undefined) {
+          initialText = await page.evaluate((sel) => {
+            const el = document.querySelector(sel);
+            return el?.textContent?.trim() || '';
+          }, selector);
+        }
+
+        const startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+          const currentText = await page.evaluate((sel) => {
+            const el = document.querySelector(sel);
+            return el?.textContent?.trim() || '';
+          }, selector);
+
+          if (currentText !== initialText) return currentText;
+          await page.waitForTimeout(interval);
+        }
+        throw new Error(`waitForTextChange: Element "${selector}" text did not change from "${initialText}" within ${timeout}ms`);
+      },
+
+      uploadFile: async (selector: string, filePath: string) => {
+        const fileInput = await page.$(selector);
+        if (!fileInput) {
+          throw new Error(`uploadFile: File input not found for selector "${selector}"`);
+        }
+        await fileInput.setInputFiles(filePath);
+      },
+
+      waitForDownload: async (options?: { timeout?: number }) => {
+        const timeout = options?.timeout ?? 60000;
+        const downloadPromise = page.waitForEvent('download', { timeout });
+        const download = await downloadPromise;
+        const downloadPath = await download.path();
+        if (!downloadPath) {
+          throw new Error('waitForDownload: Download failed - no file path available');
+        }
+        return downloadPath;
       },
     };
   }
