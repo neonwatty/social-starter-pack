@@ -69,6 +69,7 @@ export async function uploadVideo(
     status: {
       privacyStatus: metadata.privacyStatus || "private",
       selfDeclaredMadeForKids: metadata.madeForKids || false,
+      embeddable: true,
     },
   };
 

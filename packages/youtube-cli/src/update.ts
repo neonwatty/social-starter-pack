@@ -49,6 +49,7 @@ export async function updateVideo(
   // Build updated status
   const updatedStatus: any = {
     privacyStatus: currentStatus.privacyStatus,
+    embeddable: currentStatus.embeddable ?? true,
   };
 
   // Apply changes
