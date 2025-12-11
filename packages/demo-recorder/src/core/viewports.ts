@@ -249,20 +249,6 @@ export function listDesktopPresets(): string[] {
 }
 
 /**
- * List video format preset names only
- */
-export function listVideoPresets(): string[] {
-  return Object.keys(VIDEO_PRESETS);
-}
-
-/**
- * Get a video preset by name
- */
-export function getVideoPreset(name: string): ViewportPreset | undefined {
-  return VIDEO_PRESETS[name.toLowerCase()];
-}
-
-/**
  * Parse viewport string (preset name or WxH format)
  * Returns viewport settings or undefined if invalid
  */
