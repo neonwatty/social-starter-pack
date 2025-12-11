@@ -14,6 +14,15 @@ import type {
   IntroOptions,
   OutroOptions,
   WaitForEnabledOptions,
+  WaitForTextOptions,
+  WaitForTextChangeOptions,
+  WaitForHydrationOptions,
+  ActionTiming,
+  RecordingMetadata,
+  ActionElementState,
+  ActionScreenshots,
+  ActionResult,
+  RecordingSummary,
 } from '../core/types';
 import { DEFAULT_VIDEO_SETTINGS } from '../core/types';
 import { logger } from '../utils/logger';
@@ -27,19 +36,258 @@ export interface RecorderOptions {
   stepThrough?: boolean;
 }
 
+/**
+ * Options for enhanced action recording
+ */
+interface RecordActionOptions {
+  selector?: string;
+  args?: string;
+  /** Capture screenshots before/after action */
+  captureScreenshots?: 'before-after' | 'after-only' | 'none';
+  /** Capture element state before action */
+  captureElementState?: boolean;
+}
+
 export class PlaywrightRecorder {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
+  private page: Page | null = null;
   private options: RecorderOptions;
+
+  // Action timing tracking for metadata
+  private actionTimings: ActionTiming[] = [];
+  private recordingStartTime: number = 0;
+  private screenshotDir: string = '';
+  private demoSourcePath: string = '';
 
   constructor(options: RecorderOptions = {}) {
     this.options = options;
   }
 
   /**
+   * Capture element state for a selector
+   */
+  private async captureElementState(
+    page: Page,
+    selector: string
+  ): Promise<ActionElementState> {
+    try {
+      const element = await page.$(selector);
+      if (!element) {
+        return { found: false, visible: false, enabled: false };
+      }
+
+      const [visible, enabled, boundingBox, textContent] = await Promise.all([
+        element.isVisible(),
+        page.evaluate((sel) => {
+          const el = document.querySelector(sel) as HTMLButtonElement | HTMLInputElement;
+          if (!el) return true;
+          return !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+        }, selector),
+        element.boundingBox(),
+        element.textContent(),
+      ]);
+
+      return {
+        found: true,
+        visible,
+        enabled,
+        boundingBox: boundingBox
+          ? { x: boundingBox.x, y: boundingBox.y, width: boundingBox.width, height: boundingBox.height }
+          : undefined,
+        textContent: textContent?.trim().substring(0, 200),
+      };
+    } catch {
+      return { found: false, visible: false, enabled: false };
+    }
+  }
+
+  /**
+   * Capture a screenshot for an action
+   */
+  private async captureActionScreenshot(
+    page: Page,
+    actionIndex: number,
+    phase: 'before' | 'after'
+  ): Promise<string> {
+    const filename = `action-${actionIndex}-${phase}.png`;
+    const filepath = path.join(this.screenshotDir, filename);
+    await page.screenshot({ path: filepath, type: 'png' });
+    return `screenshots/${filename}`;
+  }
+
+  /**
+   * Record an action's timing information with enhanced metadata
+   */
+  private async recordAction<T>(
+    action: string,
+    fn: () => Promise<T>,
+    options: RecordActionOptions = {}
+  ): Promise<T> {
+    const { selector, args, captureScreenshots = 'none', captureElementState = false } = options;
+    const actionIndex = this.actionTimings.length;
+    const startMs = Date.now() - this.recordingStartTime;
+
+    // Capture element state before action if requested
+    let elementState: ActionElementState | undefined;
+    if (captureElementState && selector && this.page) {
+      elementState = await this.captureElementState(this.page, selector);
+    }
+
+    // Capture screenshot before action if requested
+    const screenshots: ActionScreenshots = {};
+    if (captureScreenshots === 'before-after' && this.page) {
+      screenshots.before = await this.captureActionScreenshot(this.page, actionIndex, 'before');
+    }
+
+    // Execute the action
+    let result: T;
+    let success = true;
+    let error: string | undefined;
+
+    try {
+      result = await fn();
+    } catch (err) {
+      success = false;
+      error = err instanceof Error ? err.message : String(err);
+      throw err; // Re-throw to preserve original behavior
+    } finally {
+      const endMs = Date.now() - this.recordingStartTime;
+
+      // Capture screenshot after action if requested
+      if ((captureScreenshots === 'before-after' || captureScreenshots === 'after-only') && this.page) {
+        try {
+          screenshots.after = await this.captureActionScreenshot(this.page, actionIndex, 'after');
+        } catch {
+          // Ignore screenshot errors
+        }
+      }
+
+      this.actionTimings.push({
+        action,
+        selector,
+        args,
+        startMs,
+        endMs,
+        durationMs: endMs - startMs,
+        success,
+        error,
+        elementState,
+        screenshots: Object.keys(screenshots).length > 0 ? screenshots : undefined,
+      });
+    }
+
+    return result!;
+  }
+
+  /**
+   * Record an action with a result value
+   */
+  private async recordActionWithResult<T>(
+    action: string,
+    fn: () => Promise<T>,
+    options: RecordActionOptions,
+    resultType: 'text' | 'boolean' | 'path'
+  ): Promise<T> {
+    const actionIndex = this.actionTimings.length;
+    const result = await this.recordAction(action, fn, options);
+
+    // Add result to the action timing
+    if (actionIndex < this.actionTimings.length) {
+      this.actionTimings[actionIndex].result = {
+        type: resultType,
+        value: String(result),
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * Generate warnings for AI review
+   */
+  private generateWarnings(): string[] {
+    const warnings: string[] = [];
+
+    for (let i = 0; i < this.actionTimings.length; i++) {
+      const action = this.actionTimings[i];
+
+      // Long actions
+      if (action.durationMs > 10000) {
+        warnings.push(
+          `Action #${i} (${action.action}) took ${(action.durationMs / 1000).toFixed(1)}s - consider if this wait is necessary`
+        );
+      }
+
+      // Element not visible before click
+      if (
+        action.action === 'clickAnimated' &&
+        action.elementState &&
+        !action.elementState.visible
+      ) {
+        warnings.push(
+          `Action #${i} (${action.action}) element was not visible before click: ${action.selector}`
+        );
+      }
+
+      // Element not found
+      if (action.elementState && !action.elementState.found) {
+        warnings.push(
+          `Action #${i} (${action.action}) element not found: ${action.selector}`
+        );
+      }
+
+      // Failed actions
+      if (!action.success) {
+        warnings.push(
+          `Action #${i} (${action.action}) failed: ${action.error || 'unknown error'}`
+        );
+      }
+    }
+
+    // Multiple consecutive waits
+    let consecutiveWaits = 0;
+    for (let i = 0; i < this.actionTimings.length; i++) {
+      if (this.actionTimings[i].action === 'wait') {
+        consecutiveWaits++;
+        if (consecutiveWaits >= 3) {
+          warnings.push(
+            `Multiple consecutive waits detected starting at action #${i - consecutiveWaits + 1} - consider consolidating`
+          );
+          consecutiveWaits = 0;
+        }
+      } else {
+        consecutiveWaits = 0;
+      }
+    }
+
+    return warnings;
+  }
+
+  /**
+   * Generate summary for AI review
+   */
+  private generateSummary(): RecordingSummary {
+    const successfulActions = this.actionTimings.filter((a) => a.success).length;
+    const screenshotCount = this.actionTimings.reduce((count, a) => {
+      if (a.screenshots?.before) count++;
+      if (a.screenshots?.after) count++;
+      return count;
+    }, 0);
+
+    return {
+      totalActions: this.actionTimings.length,
+      successfulActions,
+      failedActions: this.actionTimings.length - successfulActions,
+      warnings: this.generateWarnings(),
+      screenshotCount,
+    };
+  }
+
+  /**
    * Record a demo and return the path to the recorded video
    */
-  async record(demo: DemoDefinition, outputDir: string): Promise<RecordingResult> {
+  async record(demo: DemoDefinition, outputDir: string, demoSourcePath?: string): Promise<RecordingResult> {
     const settings: VideoSettings = {
       ...DEFAULT_VIDEO_SETTINGS,
       ...demo.video,
@@ -48,7 +296,16 @@ export class PlaywrightRecorder {
     const videoDir = path.join(outputDir, demo.id);
     await fs.mkdir(videoDir, { recursive: true });
 
+    // Create screenshot directory for action screenshots
+    this.screenshotDir = path.join(videoDir, 'screenshots');
+    await fs.mkdir(this.screenshotDir, { recursive: true });
+
     const startTime = Date.now();
+
+    // Initialize action timing tracking
+    this.actionTimings = [];
+    this.recordingStartTime = startTime;
+    this.demoSourcePath = demoSourcePath || '';
 
     logger.info(`Starting recording for: ${demo.name}`);
     logger.info(`Resolution: ${settings.width}x${settings.height}`);
@@ -75,6 +332,7 @@ export class PlaywrightRecorder {
       });
 
       const page = await this.context.newPage();
+      this.page = page;
 
       // Navigate to the demo URL
       logger.info('Navigating to URL...');
@@ -92,41 +350,105 @@ export class PlaywrightRecorder {
         await this.showIntro(page, demo.intro);
       }
 
-      // Create the demo context with helpers
+      // Create the demo context with helpers wrapped for action timing
       const demoContext: DemoContext = {
         page,
         browser: this.browser,
         context: this.context,
-        wait: (ms: number) => page.waitForTimeout(ms),
+        wait: async (ms: number) => {
+          await this.recordAction('wait', () => page.waitForTimeout(ms), {
+            args: `${ms}ms`,
+            captureScreenshots: 'none',
+          });
+        },
         highlight: async (selector: string, durationMs = 500) => {
-          await this.highlightElement(page, selector, durationMs);
+          await this.recordAction(
+            'highlight',
+            () => this.highlightElement(page, selector, durationMs),
+            {
+              selector,
+              args: `${durationMs}ms`,
+              captureScreenshots: 'after-only',
+              captureElementState: true,
+            }
+          );
         },
         hideDevTools: async () => {
-          await this.hideDevTools(page);
+          await this.recordAction('hideDevTools', () => this.hideDevTools(page), {
+            captureScreenshots: 'none',
+          });
         },
         typeAnimated: async (selector: string, text: string, options?: TypeOptions) => {
-          await this.typeAnimated(page, selector, text, options);
+          await this.recordAction(
+            'typeAnimated',
+            () => this.typeAnimated(page, selector, text, options),
+            {
+              selector,
+              args: text,
+              captureScreenshots: 'before-after',
+              captureElementState: true,
+            }
+          );
         },
         moveTo: async (selector: string, options?: MoveOptions) => {
-          await this.moveTo(page, selector, options);
+          await this.recordAction('moveTo', () => this.moveTo(page, selector, options), {
+            selector,
+            captureScreenshots: 'none',
+            captureElementState: true,
+          });
         },
         clickAnimated: async (selector: string, options?: ClickOptions) => {
-          await this.clickAnimated(page, selector, options);
+          await this.recordAction(
+            'clickAnimated',
+            () => this.clickAnimated(page, selector, options),
+            {
+              selector,
+              captureScreenshots: 'before-after',
+              captureElementState: true,
+            }
+          );
         },
         zoomHighlight: async (selector: string, options?: ZoomOptions) => {
-          await this.zoomHighlight(page, selector, options);
+          await this.recordAction(
+            'zoomHighlight',
+            () => this.zoomHighlight(page, selector, options),
+            {
+              selector,
+              captureScreenshots: 'after-only',
+              captureElementState: true,
+            }
+          );
         },
         scrollToElement: async (selector: string, options?: ScrollOptions) => {
-          await this.scrollToElement(page, selector, options);
+          await this.recordAction(
+            'scrollToElement',
+            () => this.scrollToElement(page, selector, options),
+            {
+              selector,
+              captureScreenshots: 'before-after',
+              captureElementState: true,
+            }
+          );
         },
         scrollBy: async (pixels: number, options?: ScrollOptions) => {
-          await this.scrollBy(page, pixels, options);
+          await this.recordAction(
+            'scrollBy',
+            () => this.scrollBy(page, pixels, options),
+            {
+              args: `${pixels}px`,
+              captureScreenshots: 'before-after',
+            }
+          );
         },
         scrollToTop: async (options?: ScrollOptions) => {
-          await this.scrollToTop(page, options);
+          await this.recordAction('scrollToTop', () => this.scrollToTop(page, options), {
+            captureScreenshots: 'before-after',
+          });
         },
         scrollToBottom: async (options?: ScrollOptions) => {
-          await this.scrollToBottom(page, options);
+          await this.recordAction('scrollToBottom', () => this.scrollToBottom(page, options), {
+            captureScreenshots: 'before-after',
+          });
         },
         screenshot: async (_name?: string) => {
           // In video mode, screenshots are a no-op (video captures everything)
@@ -134,22 +456,34 @@ export class PlaywrightRecorder {
           return '';
         },
         waitForEnabled: async (selector: string, options?: WaitForEnabledOptions) => {
-          const timeout = options?.timeout ?? 30000;
-          const interval = options?.interval ?? 100;
-          const startTime = Date.now();
+          await this.recordAction(
+            'waitForEnabled',
+            async () => {
+              const timeout = options?.timeout ?? 30000;
+              const interval = options?.interval ?? 100;
+              const waitStart = Date.now();
 
-          while (Date.now() - startTime < timeout) {
-            const isEnabled = await page.evaluate((sel) => {
-              const el = document.querySelector(sel) as HTMLButtonElement | HTMLInputElement;
-              if (!el) return false;
-              // Check disabled attribute and aria-disabled
-              return !el.disabled && el.getAttribute('aria-disabled') !== 'true';
-            }, selector);
+              while (Date.now() - waitStart < timeout) {
+                const isEnabled = await page.evaluate((sel) => {
+                  const el = document.querySelector(sel) as HTMLButtonElement | HTMLInputElement;
+                  if (!el) return false;
+                  // Check disabled attribute and aria-disabled
+                  return !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+                }, selector);
 
-            if (isEnabled) return;
-            await page.waitForTimeout(interval);
-          }
-          throw new Error(`waitForEnabled: Element "${selector}" did not become enabled within ${timeout}ms`);
+                if (isEnabled) return;
+                await page.waitForTimeout(interval);
+              }
+              throw new Error(
+                `waitForEnabled: Element "${selector}" did not become enabled within ${timeout}ms`
+              );
+            },
+            {
+              selector,
+              captureScreenshots: 'after-only',
+              captureElementState: true,
+            }
+          );
         },
         exists: async (selector: string) => {
           const element = await page.$(selector);
@@ -163,6 +497,147 @@ export class PlaywrightRecorder {
           } catch {
             return false;
           }
+        },
+
+        // SPA & Async operation helpers
+
+        waitForHydration: async (options?: WaitForHydrationOptions) => {
+          await this.recordAction(
+            'waitForHydration',
+            async () => {
+              const timeout = options?.timeout ?? 10000;
+              // Wait for Next.js/React hydration indicators
+              await Promise.race([
+                // Wait for Next.js hydration marker to be removed
+                page.waitForFunction(
+                  () => {
+                    // Check if React has hydrated
+                    const root =
+                      document.getElementById('__next') ||
+                      document.getElementById('root') ||
+                      document.body;
+                    // Next.js removes data-reactroot after hydration
+                    // Also check for React 18's createRoot hydration
+                    return root && !document.querySelector('[data-reactroot]');
+                  },
+                  { timeout }
+                ).catch(() => {}),
+                // Fallback: wait for network to be idle and give React time to hydrate
+                page.waitForLoadState('networkidle').then(() => page.waitForTimeout(500)),
+              ]);
+            },
+            {
+              captureScreenshots: 'after-only',
+            }
+          );
+        },
+
+        waitForText: async (selector: string, text: string, options?: WaitForTextOptions) => {
+          await this.recordAction(
+            'waitForText',
+            async () => {
+              const timeout = options?.timeout ?? 30000;
+              const interval = options?.interval ?? 100;
+              const waitStart = Date.now();
+
+              while (Date.now() - waitStart < timeout) {
+                const currentText = await page.evaluate((sel) => {
+                  const el = document.querySelector(sel);
+                  return el?.textContent?.trim() || '';
+                }, selector);
+
+                if (currentText.includes(text)) return;
+                await page.waitForTimeout(interval);
+              }
+              throw new Error(
+                `waitForText: Element "${selector}" did not contain "${text}" within ${timeout}ms`
+              );
+            },
+            {
+              selector,
+              args: text,
+              captureScreenshots: 'after-only',
+              captureElementState: true,
+            }
+          );
+        },
+
+        waitForTextChange: async (selector: string, options?: WaitForTextChangeOptions) => {
+          return await this.recordActionWithResult(
+            'waitForTextChange',
+            async () => {
+              const timeout = options?.timeout ?? 30000;
+              const interval = options?.interval ?? 100;
+
+              // Get initial text
+              let initialText = options?.initialText;
+              if (initialText === undefined) {
+                initialText = await page.evaluate((sel) => {
+                  const el = document.querySelector(sel);
+                  return el?.textContent?.trim() || '';
+                }, selector);
+              }
+
+              const waitStart = Date.now();
+              while (Date.now() - waitStart < timeout) {
+                const currentText = await page.evaluate((sel) => {
+                  const el = document.querySelector(sel);
+                  return el?.textContent?.trim() || '';
+                }, selector);
+
+                if (currentText !== initialText) return currentText;
+                await page.waitForTimeout(interval);
+              }
+              throw new Error(
+                `waitForTextChange: Element "${selector}" text did not change from "${initialText}" within ${timeout}ms`
+              );
+            },
+            {
+              selector,
+              captureScreenshots: 'after-only',
+              captureElementState: true,
+            },
+            'text'
+          );
+        },
+
+        uploadFile: async (selector: string, filePath: string) => {
+          await this.recordAction(
+            'uploadFile',
+            async () => {
+              const fileInput = await page.$(selector);
+              if (!fileInput) {
+                throw new Error(`uploadFile: File input not found for selector "${selector}"`);
+              }
+              await fileInput.setInputFiles(filePath);
+            },
+            {
+              selector,
+              args: filePath,
+              captureScreenshots: 'before-after',
+              captureElementState: true,
+            }
+          );
+        },
+
+        waitForDownload: async (options?: { timeout?: number }) => {
+          return await this.recordActionWithResult(
+            'waitForDownload',
+            async () => {
+              const timeout = options?.timeout ?? 60000;
+              const downloadPromise = page.waitForEvent('download', { timeout });
+              const download = await downloadPromise;
+              const downloadPath = await download.path();
+              if (!downloadPath) {
+                throw new Error('waitForDownload: Download failed - no file path available');
+              }
+              return downloadPath;
+            },
+            {
+              captureScreenshots: 'after-only',
+            },
+            'path'
+          );
         },
       };
 
@@ -187,10 +662,37 @@ export class PlaywrightRecorder {
       const videoPath = await this.findRecordedVideo(videoDir);
       const durationMs = Date.now() - startTime;
 
-      logger.info(`Recording complete: ${videoPath}`);
-      logger.info(`Duration: ${(durationMs / 1000).toFixed(1)}s`);
+      // Create and save recording metadata with AI-readable summary
+      const metadata: RecordingMetadata = {
+        demoId: demo.id,
+        demoName: demo.name,
+        url: demo.url,
+        recordedAt: new Date(startTime).toISOString(),
+        resolution: {
+          width: settings.width,
+          height: settings.height,
+        },
+        totalDurationMs: durationMs,
+        actions: this.actionTimings,
+        summary: this.generateSummary(),
+        demoSourcePath: this.demoSourcePath,
+      };
 
-      return { videoPath, durationMs };
+      // Save metadata JSON alongside video
+      const metadataPath = videoPath.replace(/\.[^.]+$/, '.metadata.json');
+      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+
+      logger.info(`Recording complete: ${videoPath}`);
+      logger.info(`Metadata saved: ${metadataPath}`);
+      logger.info(`Duration: ${(durationMs / 1000).toFixed(1)}s`);
+      logger.info(`Actions recorded: ${metadata.summary.totalActions} (${metadata.summary.successfulActions} successful, ${metadata.summary.failedActions} failed)`);
+      logger.info(`Screenshots captured: ${metadata.summary.screenshotCount}`);
+      if (metadata.summary.warnings.length > 0) {
+        logger.warn(`Warnings: ${metadata.summary.warnings.length}`);
+        metadata.summary.warnings.forEach(w => logger.warn(`  - ${w}`));
+      }
+
+      return { videoPath, durationMs, metadataPath, metadata };
     } finally {
       await this.cleanup();
     }

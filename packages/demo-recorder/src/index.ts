@@ -1,7 +1,22 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { recordCommand, listCommand, createCommand, screenshotCommand, thumbnailCommand, gifCommand, markdownCommand, embedCommand, viewportsCommand, inspectCommand } from './cli/commands';
+import {
+  recordCommand,
+  listCommand,
+  createCommand,
+  screenshotCommand,
+  thumbnailCommand,
+  gifCommand,
+  markdownCommand,
+  embedCommand,
+  viewportsCommand,
+  inspectCommand,
+  validateCommand,
+  debugCommand,
+  analyzeCommand,
+  trimCommand,
+} from './cli/commands';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pkg = require('../package.json');
@@ -34,6 +49,7 @@ program
   .option('--headed', 'Run browser in headed mode (visible window)')
   .option('--headed-debug', 'Headed mode with selector highlighting and logging')
   .option('--step-through', 'Pause for keypress between actions (requires --headed-debug)')
+  .option('--preset <preset>', 'Video format preset: youtube-shorts, youtube, twitter, square')
   .action(recordCommand);
 
 // demo-recorder screenshot <demo-file>
@@ -119,6 +135,41 @@ program
   .option('--viewport <preset>', 'Viewport preset (e.g., iphone-15-pro) or WxH')
   .option('--format <format>', 'Output format: table, json', 'table')
   .option('--headed', 'Run browser in headed mode')
+  .option('--full', 'Full inspection with multiple selector strategies (for AI consumption)')
+  .option('--screenshot <path>', 'Capture a screenshot alongside inspection')
   .action(inspectCommand);
+
+// demo-recorder validate <demo-file>
+program
+  .command('validate <demo-file>')
+  .description('Validate selectors in a demo file without recording')
+  .option('--viewport <preset>', 'Viewport preset (e.g., iphone-15-pro) or WxH')
+  .option('--headed', 'Run browser in headed mode')
+  .action(validateCommand);
+
+// demo-recorder debug <demo-file>
+program
+  .command('debug <demo-file>')
+  .description('Run demo in interactive debug mode with step-by-step execution')
+  .option('--viewport <preset>', 'Viewport preset (e.g., iphone-15-pro) or WxH')
+  .action(debugCommand);
+
+// demo-recorder analyze <video-file>
+program
+  .command('analyze <video-file>')
+  .description('Analyze video for editing opportunities (silence detection, scene changes)')
+  .option('--timeline', 'Generate visual HTML timeline')
+  .option('--max-pause <sec>', 'Maximum acceptable pause duration (seconds)', '3')
+  .option('--json', 'Output JSON only')
+  .action(analyzeCommand);
+
+// demo-recorder trim <video-file>
+program
+  .command('trim <video-file>')
+  .description('Auto-trim video based on analysis (removes long pauses)')
+  .option('--preview', 'Preview what would be trimmed without applying')
+  .option('--min-pause <sec>', 'Minimum pause to keep (seconds)', '1')
+  .option('-o, --output <path>', 'Output video path')
+  .action(trimCommand);
 
 program.parse();

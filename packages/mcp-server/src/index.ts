@@ -174,6 +174,22 @@ const tools: Tool[] = [
 
   // Demo recorder tools
   {
+    name: "demo_inspect",
+    description: "Inspect a page and list all interactive elements with multiple selector strategies. Use --full for AI-optimized JSON output.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "URL to inspect" },
+        full: { type: "boolean", description: "Full inspection with multiple selector strategies (recommended for AI)" },
+        format: { type: "string", enum: ["table", "json"], description: "Output format (json recommended for AI)" },
+        viewport: { type: "string", description: "Viewport preset (e.g., youtube-shorts, iphone-15-pro)" },
+        screenshot: { type: "string", description: "Path to save screenshot" },
+        headed: { type: "boolean", description: "Run browser visibly" },
+      },
+      required: ["url"],
+    },
+  },
+  {
     name: "demo_record",
     description: "Record a demo video from a demo definition file",
     inputSchema: {
@@ -181,6 +197,7 @@ const tools: Tool[] = [
       properties: {
         demoFile: { type: "string", description: "Path to demo .ts file" },
         output: { type: "string", description: "Output directory" },
+        preset: { type: "string", enum: ["youtube-shorts", "youtube", "twitter", "linkedin", "square", "instagram-reel", "tiktok"], description: "Video format preset" },
         headed: { type: "boolean", description: "Run browser visibly" },
       },
       required: ["demoFile"],
@@ -497,6 +514,10 @@ async function handleToolCall(
         return await runCommand("linkedin", ["status"]);
 
       // Demo recorder
+      case "demo_inspect": {
+        const { url, ...opts } = args;
+        return await runCommand("demo-recorder", ["inspect", url as string, ...buildArgs(opts)]);
+      }
       case "demo_record": {
         const { demoFile, ...opts } = args;
         return await runCommand("demo-recorder", ["record", demoFile as string, ...buildArgs(opts)]);
