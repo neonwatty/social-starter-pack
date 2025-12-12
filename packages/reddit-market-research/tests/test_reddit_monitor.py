@@ -16,6 +16,7 @@ from reddit_monitor import (
     load_keywords_from_file,
     normalize_subreddits,
     output_results,
+    post_to_reddit,
     truncate_text,
 )
 
@@ -219,3 +220,35 @@ class TestNormalizeSubreddits:
     def test_empty_string(self) -> None:
         """Test empty string input."""
         assert normalize_subreddits("") == ""
+
+
+class TestPostToReddit:
+    """Tests for post_to_reddit function."""
+
+    def test_raises_error_when_neither_url_nor_body(self) -> None:
+        """Test that providing neither url nor body raises ValueError."""
+        with pytest.raises(ValueError, match="Must specify either"):
+            post_to_reddit(
+                subreddit_name="test",
+                title="Test Title",
+            )
+
+    def test_raises_error_with_empty_strings(self) -> None:
+        """Test that empty strings for both url and body raises ValueError."""
+        with pytest.raises(ValueError, match="Must specify either"):
+            post_to_reddit(
+                subreddit_name="test",
+                title="Test Title",
+                url="",
+                body="",
+            )
+
+    def test_raises_error_with_none_values(self) -> None:
+        """Test that None values for both url and body raises ValueError."""
+        with pytest.raises(ValueError, match="Must specify either"):
+            post_to_reddit(
+                subreddit_name="test",
+                title="Test Title",
+                url=None,
+                body=None,
+            )
