@@ -264,6 +264,21 @@ const tools: Tool[] = [
       required: ["subreddits", "keywords"],
     },
   },
+  {
+    name: "reddit_post",
+    description: "Post a submission to Reddit (link or text post)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        subreddit: { type: "string", description: "Subreddit name (without r/)" },
+        title: { type: "string", description: "Post title" },
+        url: { type: "string", description: "URL for link posts (mutually exclusive with body)" },
+        body: { type: "string", description: "Text body for self posts (mutually exclusive with url)" },
+        json: { type: "boolean", description: "Output as JSON" },
+      },
+      required: ["subreddit", "title"],
+    },
+  },
 
   // Google Forms tools
   {
@@ -544,6 +559,24 @@ async function handleToolCall(
           "-k", keywords as string,
           ...buildArgs(opts),
         ]);
+      }
+      case "reddit_post": {
+        const { subreddit, title, url, body, json: jsonOutput } = args;
+        const cliArgs = [
+          "post",
+          "-s", subreddit as string,
+          "-t", title as string,
+        ];
+        if (url) {
+          cliArgs.push("-u", url as string);
+        }
+        if (body) {
+          cliArgs.push("-b", body as string);
+        }
+        if (jsonOutput) {
+          cliArgs.push("--json");
+        }
+        return await runCommand("reddit-market-research", cliArgs);
       }
 
       // Google Forms

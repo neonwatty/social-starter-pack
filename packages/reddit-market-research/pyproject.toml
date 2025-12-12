@@ -15,7 +15,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
-    "praw>=7.8.0",
+    "praw @ git+https://github.com/praw-dev/praw.git",  # 7.8.2+ required for link posts with body text
 ]
 
 [project.scripts]
@@ -24,6 +24,9 @@ reddit-market-research = "reddit_monitor:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["reddit_monitor.py"]

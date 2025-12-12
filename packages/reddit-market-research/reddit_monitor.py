@@ -148,6 +148,63 @@ def monitor_reddit(subreddits: str, keywords: list[str]) -> None:
             sys.stdout.flush()
 
 
+def post_to_reddit(
+    subreddit_name: str,
+    title: str,
+    url: str | None = None,
+    body: str | None = None,
+) -> dict[str, str]:
+    """
+    Post a submission to Reddit.
+
+    Args:
+        subreddit_name: Name of the subreddit (without r/)
+        title: Post title
+        url: URL for link posts (can be combined with body)
+        body: Text body (for text posts, or optional body for link posts)
+
+    Returns:
+        Dict with: id, title, url, permalink
+
+    Raises:
+        ValueError: If neither url nor body is provided
+        Exception: For Reddit API errors
+    """
+    if not url and not body:
+        raise ValueError("Must specify either url (for link post) or body (for text post).")
+
+    reddit = get_reddit()
+    subreddit = reddit.subreddit(subreddit_name)
+
+    try:
+        if url:
+            # Link post (optionally with body text - requires PRAW 7.8.2+)
+            submission = subreddit.submit(title=title, url=url, selftext=body or "")
+        else:
+            # Text/self post
+            submission = subreddit.submit(title=title, selftext=body)
+
+        return {
+            "id": submission.id,
+            "title": submission.title,
+            "url": f"https://reddit.com{submission.permalink}",
+            "permalink": submission.permalink,
+        }
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "403" in error_msg or "forbidden" in error_msg:
+            raise Exception(
+                f"Not allowed to post to r/{subreddit_name}. "
+                "Check subreddit rules or account permissions."
+            ) from e
+        elif "404" in error_msg or "not found" in error_msg:
+            raise Exception(f"Subreddit r/{subreddit_name} not found.") from e
+        elif "ratelimit" in error_msg or "rate limit" in error_msg:
+            raise Exception("Reddit rate limit exceeded. Please wait before posting again.") from e
+        else:
+            raise
+
+
 def output_results(
     results: list[dict[str, str | int]],
     output_format: str = "text",
@@ -276,13 +333,70 @@ Examples:
         help="Load keywords from file (one per line)",
     )
 
+    # Post command
+    post_parser = subparsers.add_parser("post", help="Post a submission to Reddit")
+    post_parser.add_argument(
+        "--subreddit",
+        "-s",
+        required=True,
+        help="Subreddit to post to (without r/ prefix). Example: 'coolgithubprojects'",
+    )
+    post_parser.add_argument(
+        "--title",
+        "-t",
+        required=True,
+        help="Post title",
+    )
+    post_parser.add_argument(
+        "--url",
+        "-u",
+        help="URL for link posts (can be combined with --body)",
+    )
+    post_parser.add_argument(
+        "--body",
+        "-b",
+        help="Text body (for text posts, or optional body for link posts)",
+    )
+    post_parser.add_argument(
+        "--json",
+        "-j",
+        action="store_true",
+        help="Output result as JSON",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         return 1
 
-    # Parse keywords from --keywords or --keywords-file
+    # Handle post command (doesn't need keywords)
+    if args.command == "post":
+        try:
+            result = post_to_reddit(
+                subreddit_name=args.subreddit,
+                title=args.title,
+                url=args.url,
+                body=args.body,
+            )
+
+            if args.json:
+                print(json.dumps(result, indent=2))
+            else:
+                print("Post submitted successfully!")
+                print(f"  Title: {result['title']}")
+                print(f"  URL: {result['url']}")
+
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+        except Exception as e:
+            print(f"Failed to post: {e}", file=sys.stderr)
+            return 1
+
+        return 0
+
+    # Parse keywords from --keywords or --keywords-file (for search/monitor)
     keywords: list[str] = []
     if hasattr(args, "keywords_file") and args.keywords_file:
         keywords = load_keywords_from_file(args.keywords_file)
