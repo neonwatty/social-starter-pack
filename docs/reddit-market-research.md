@@ -110,6 +110,11 @@ reddit-market-research post -s "coolgithubprojects" \
   -b "Description of the project..."
 ```
 
+> **Note:** Link posts with body text require PRAW 7.8.2+. Until released on PyPI, upgrade PRAW from git:
+> ```bash
+> pip install git+https://github.com/praw-dev/praw.git
+> ```
+
 ### Post Options
 
 ```
