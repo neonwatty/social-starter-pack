@@ -35,6 +35,8 @@ make reddit ARGS='search -s "subreddit" -k "keywords"'
 ```
 reddit-market-research search    Search historical posts
 reddit-market-research monitor   Monitor new posts in real-time
+reddit-market-research post      Post a submission to Reddit
+reddit-market-research flairs    List available flairs for a subreddit
 ```
 
 ## Search Options
@@ -86,6 +88,53 @@ reddit-market-research search -s "startups" --keywords-file keywords.txt
 Real-time monitoring:
 ```bash
 reddit-market-research monitor -s "startups" -k "looking for,need help"
+```
+
+## Posting to Reddit
+
+Post a text submission:
+```bash
+reddit-market-research post -s "test" -t "My Title" -b "Post body text"
+```
+
+Post a link submission:
+```bash
+reddit-market-research post -s "coolgithubprojects" -t "My Project" -u "https://github.com/user/repo"
+```
+
+Post a link with body text (requires PRAW 7.8.2+):
+```bash
+reddit-market-research post -s "coolgithubprojects" \
+  -t "My Project" \
+  -u "https://github.com/user/repo" \
+  -b "Description of the project..."
+```
+
+### Post Options
+
+```
+-s, --subreddit <sub>     Subreddit to post to (without r/ prefix)
+-t, --title <title>       Post title
+-u, --url <url>           URL for link posts
+-b, --body <text>         Text body (or optional body for link posts)
+--flair-id <id>           Flair template ID (from 'flairs' command)
+--flair-text <text>       Custom flair text (for editable flairs)
+-j, --json                Output result as JSON
+```
+
+### Using Flairs
+
+List available flairs for a subreddit:
+```bash
+reddit-market-research flairs -s "python"
+```
+
+Post with a flair:
+```bash
+reddit-market-research post -s "python" \
+  -t "My Python Project" \
+  -u "https://github.com/user/repo" \
+  --flair-id "f35fb004-c1ff-11ee-8305-565bc5d0cc73"
 ```
 
 ## Use with Makefile
