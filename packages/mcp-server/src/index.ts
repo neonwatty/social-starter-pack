@@ -272,11 +272,25 @@ const tools: Tool[] = [
       properties: {
         subreddit: { type: "string", description: "Subreddit name (without r/)" },
         title: { type: "string", description: "Post title" },
-        url: { type: "string", description: "URL for link posts (mutually exclusive with body)" },
-        body: { type: "string", description: "Text body for self posts (mutually exclusive with url)" },
+        url: { type: "string", description: "URL for link posts (can be combined with body)" },
+        body: { type: "string", description: "Text body (for text posts, or optional body for link posts)" },
+        flairId: { type: "string", description: "Flair template ID (from reddit_flairs)" },
+        flairText: { type: "string", description: "Custom flair text (for editable flairs)" },
         json: { type: "boolean", description: "Output as JSON" },
       },
       required: ["subreddit", "title"],
+    },
+  },
+  {
+    name: "reddit_flairs",
+    description: "List available post flairs for a subreddit",
+    inputSchema: {
+      type: "object",
+      properties: {
+        subreddit: { type: "string", description: "Subreddit name (without r/)" },
+        json: { type: "boolean", description: "Output as JSON" },
+      },
+      required: ["subreddit"],
     },
   },
 
@@ -561,7 +575,7 @@ async function handleToolCall(
         ]);
       }
       case "reddit_post": {
-        const { subreddit, title, url, body, json: jsonOutput } = args;
+        const { subreddit, title, url, body, flairId, flairText, json: jsonOutput } = args;
         const cliArgs = [
           "post",
           "-s", subreddit as string,
@@ -573,6 +587,20 @@ async function handleToolCall(
         if (body) {
           cliArgs.push("-b", body as string);
         }
+        if (flairId) {
+          cliArgs.push("--flair-id", flairId as string);
+        }
+        if (flairText) {
+          cliArgs.push("--flair-text", flairText as string);
+        }
+        if (jsonOutput) {
+          cliArgs.push("--json");
+        }
+        return await runCommand("reddit-market-research", cliArgs);
+      }
+      case "reddit_flairs": {
+        const { subreddit, json: jsonOutput } = args;
+        const cliArgs = ["flairs", "-s", subreddit as string];
         if (jsonOutput) {
           cliArgs.push("--json");
         }
