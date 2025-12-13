@@ -148,11 +148,53 @@ def monitor_reddit(subreddits: str, keywords: list[str]) -> None:
             sys.stdout.flush()
 
 
+def get_subreddit_flairs(subreddit_name: str) -> list[dict[str, str | bool]]:
+    """
+    Get available post flairs for a subreddit.
+
+    Args:
+        subreddit_name: Name of the subreddit (without r/)
+
+    Returns:
+        List of dicts with: id, text, editable
+
+    Raises:
+        Exception: For Reddit API errors (403 if flairs not accessible)
+    """
+    reddit = get_reddit()
+    subreddit = reddit.subreddit(subreddit_name)
+
+    try:
+        flairs = []
+        for flair in subreddit.flair.link_templates:
+            flairs.append(
+                {
+                    "id": flair["id"],
+                    "text": flair["text"],
+                    "editable": flair.get("text_editable", False),
+                }
+            )
+        return flairs
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "403" in error_msg or "forbidden" in error_msg:
+            raise Exception(
+                f"Cannot access flairs for r/{subreddit_name}. "
+                "Subreddit may not allow flair listing or require moderator access."
+            ) from e
+        elif "404" in error_msg or "not found" in error_msg:
+            raise Exception(f"Subreddit r/{subreddit_name} not found.") from e
+        else:
+            raise
+
+
 def post_to_reddit(
     subreddit_name: str,
     title: str,
     url: str | None = None,
     body: str | None = None,
+    flair_id: str | None = None,
+    flair_text: str | None = None,
 ) -> dict[str, str]:
     """
     Post a submission to Reddit.
@@ -162,9 +204,11 @@ def post_to_reddit(
         title: Post title
         url: URL for link posts (can be combined with body)
         body: Text body (for text posts, or optional body for link posts)
+        flair_id: Flair template ID (from get_subreddit_flairs)
+        flair_text: Custom flair text (if flair is editable)
 
     Returns:
-        Dict with: id, title, url, permalink
+        Dict with: id, title, url, permalink, flair
 
     Raises:
         ValueError: If neither url nor body is provided
@@ -179,16 +223,28 @@ def post_to_reddit(
     try:
         if url:
             # Link post (optionally with body text - requires PRAW 7.8.2+)
-            submission = subreddit.submit(title=title, url=url, selftext=body or "")
+            submission = subreddit.submit(
+                title=title,
+                url=url,
+                selftext=body or "",
+                flair_id=flair_id,
+                flair_text=flair_text,
+            )
         else:
             # Text/self post
-            submission = subreddit.submit(title=title, selftext=body)
+            submission = subreddit.submit(
+                title=title,
+                selftext=body,
+                flair_id=flair_id,
+                flair_text=flair_text,
+            )
 
         return {
             "id": submission.id,
             "title": submission.title,
             "url": f"https://reddit.com{submission.permalink}",
             "permalink": submission.permalink,
+            "flair": submission.link_flair_text or "",
         }
     except Exception as e:
         error_msg = str(e).lower()
@@ -358,10 +414,33 @@ Examples:
         help="Text body (for text posts, or optional body for link posts)",
     )
     post_parser.add_argument(
+        "--flair-id",
+        help="Flair template ID (use 'flairs' command to list available flairs)",
+    )
+    post_parser.add_argument(
+        "--flair-text",
+        help="Custom flair text (only for editable flairs)",
+    )
+    post_parser.add_argument(
         "--json",
         "-j",
         action="store_true",
         help="Output result as JSON",
+    )
+
+    # Flairs command
+    flairs_parser = subparsers.add_parser("flairs", help="List available flairs for a subreddit")
+    flairs_parser.add_argument(
+        "--subreddit",
+        "-s",
+        required=True,
+        help="Subreddit to get flairs for (without r/ prefix)",
+    )
+    flairs_parser.add_argument(
+        "--json",
+        "-j",
+        action="store_true",
+        help="Output as JSON",
     )
 
     args = parser.parse_args()
@@ -378,6 +457,8 @@ Examples:
                 title=args.title,
                 url=args.url,
                 body=args.body,
+                flair_id=args.flair_id,
+                flair_text=args.flair_text,
             )
 
             if args.json:
@@ -386,12 +467,36 @@ Examples:
                 print("Post submitted successfully!")
                 print(f"  Title: {result['title']}")
                 print(f"  URL: {result['url']}")
+                if result.get("flair"):
+                    print(f"  Flair: {result['flair']}")
 
         except ValueError as e:
             print(f"Error: {e}", file=sys.stderr)
             return 1
         except Exception as e:
             print(f"Failed to post: {e}", file=sys.stderr)
+            return 1
+
+        return 0
+
+    # Handle flairs command (doesn't need keywords)
+    if args.command == "flairs":
+        try:
+            flairs = get_subreddit_flairs(args.subreddit)
+
+            if args.json:
+                print(json.dumps(flairs, indent=2))
+            else:
+                if not flairs:
+                    print(f"No flairs available for r/{args.subreddit}")
+                else:
+                    print(f"Available flairs for r/{args.subreddit}:\n")
+                    for flair in flairs:
+                        editable = " (editable)" if flair["editable"] else ""
+                        print(f"  [{flair['id']}] {flair['text']}{editable}")
+
+        except Exception as e:
+            print(f"Failed to get flairs: {e}", file=sys.stderr)
             return 1
 
         return 0
