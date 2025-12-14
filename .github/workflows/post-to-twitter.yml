@@ -1,0 +1,59 @@
+name: Post to Twitter
+
+on:
+  workflow_dispatch:
+    inputs:
+      tweet_text:
+        description: 'Text content of the tweet'
+        required: true
+        type: string
+      image_url:
+        description: 'Optional image URL to attach'
+        required: false
+        type: string
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: packages/twitter-cli/package-lock.json
+
+      - name: Install twitter-cli
+        run: |
+          cd packages/twitter-cli
+          npm ci
+          npm run build
+          npm link
+
+      - name: Setup Twitter credentials
+        env:
+          X_CLIENT_ID: ${{ secrets.X_CLIENT_ID }}
+          X_CLIENT_SECRET: ${{ secrets.X_CLIENT_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_REFRESH_TOKEN: ${{ secrets.X_REFRESH_TOKEN }}
+        run: |
+          cat > ~/.twitter-cli-credentials.json << EOF
+          {
+            "accessToken": "$X_ACCESS_TOKEN",
+            "refreshToken": "$X_REFRESH_TOKEN",
+            "clientId": "$X_CLIENT_ID",
+            "clientSecret": "$X_CLIENT_SECRET",
+            "expiresAt": 0
+          }
+          EOF
+          chmod 600 ~/.twitter-cli-credentials.json
+
+      - name: Post tweet
+        run: twitter post "${{ inputs.tweet_text }}"
+
+      - name: Log result
+        run: echo "Tweet posted successfully!"
