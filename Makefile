@@ -1,4 +1,4 @@
-.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin install-mcp uninstall-mcp
+.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin test-gforms install-mcp uninstall-mcp
 
 # Default target
 help:
@@ -23,6 +23,7 @@ help:
 	@echo "  make test-youtube"
 	@echo "  make test-twitter"
 	@echo "  make test-linkedin"
+	@echo "  make test-gforms"
 	@echo "  make test-reddit"
 	@echo ""
 	@echo "Utilities:"
@@ -32,6 +33,7 @@ help:
 	@echo "  make youtube          Run youtube-cli (use ARGS='...' for arguments)"
 	@echo "  make twitter          Run twitter-cli (use ARGS='...' for arguments)"
 	@echo "  make linkedin         Run linkedin-cli (use ARGS='...' for arguments)"
+	@echo "  make gforms           Run google-forms-cli (use ARGS='...' for arguments)"
 
 # ============================================================================
 # Installation
@@ -47,7 +49,8 @@ install-node:
 	cd packages/youtube-cli && npm install && npm run build && npm link --force
 	cd packages/twitter-cli && npm install && npm run build && npm link --force
 	cd packages/linkedin-cli && npm install && npm run build && npm link --force
-	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'youtube --help', 'twitter --help', and 'linkedin --help' to verify."
+	cd packages/google-forms-cli && npm install && npm run build && npm link --force
+	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'youtube --help', 'twitter --help', 'linkedin --help', and 'gforms --help' to verify."
 
 install-python:
 	@echo "Installing reddit-market-research..."
@@ -136,11 +139,15 @@ twitter:
 linkedin:
 	@./scripts/run-with-secrets.sh linkedin $(ARGS)
 
+# Run google-forms-cli with Doppler or .env fallback
+gforms:
+	@./scripts/run-with-secrets.sh gforms $(ARGS)
+
 # ============================================================================
 # Testing
 # ============================================================================
 
-test: test-autocomplete test-demo-recorder test-youtube test-twitter test-linkedin test-reddit
+test: test-autocomplete test-demo-recorder test-youtube test-twitter test-linkedin test-gforms test-reddit
 	@echo "All tests passed!"
 
 test-autocomplete:
@@ -162,6 +169,10 @@ test-twitter:
 test-linkedin:
 	@echo "Testing linkedin-cli..."
 	cd packages/linkedin-cli && npm test
+
+test-gforms:
+	@echo "Testing google-forms-cli..."
+	cd packages/google-forms-cli && npm test
 
 test-reddit:
 	@echo "Testing reddit-market-research..."
@@ -199,6 +210,11 @@ check:
 		echo "  [OK] linkedin-cli (linkedin)"; \
 	else \
 		echo "  [MISSING] linkedin-cli - run 'make install-node'"; \
+	fi
+	@if command -v gforms &> /dev/null; then \
+		echo "  [OK] google-forms-cli (gforms)"; \
+	else \
+		echo "  [MISSING] google-forms-cli - run 'make install-node'"; \
 	fi
 	@echo ""
 	@echo "Python packages:"
