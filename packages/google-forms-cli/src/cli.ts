@@ -45,6 +45,7 @@ Form Management:
   update <form-id>        Update form metadata
     --title, -t           New title
     --description, -d     New description
+    --collect-emails      Email collection: none, verified, input
 
   delete <form-id>        Delete a form
     --confirm, -y         Skip confirmation prompt

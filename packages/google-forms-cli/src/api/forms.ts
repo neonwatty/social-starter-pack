@@ -82,10 +82,12 @@ export async function listForms(auth: OAuth2Client, _limit?: number): Promise<Fo
   return formInfos;
 }
 
+export type EmailCollectionType = "none" | "verified" | "input";
+
 export async function updateFormInfo(
   auth: OAuth2Client,
   formId: string,
-  updates: { title?: string; description?: string }
+  updates: { title?: string; description?: string; collectEmails?: EmailCollectionType }
 ): Promise<void> {
   const forms = getFormsClient(auth);
   const requests: forms_v1.Schema$Request[] = [];
@@ -108,6 +110,22 @@ export async function updateFormInfo(
           description: updates.description,
         },
         updateMask: "description",
+      },
+    });
+  }
+
+  if (updates.collectEmails !== undefined) {
+    const emailCollectionMap: Record<EmailCollectionType, string> = {
+      none: "DO_NOT_COLLECT",
+      verified: "VERIFIED",
+      input: "RESPONDER_INPUT",
+    };
+    requests.push({
+      updateSettings: {
+        settings: {
+          emailCollectionType: emailCollectionMap[updates.collectEmails],
+        },
+        updateMask: "emailCollectionType",
       },
     });
   }
