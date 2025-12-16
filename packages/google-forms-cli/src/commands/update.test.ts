@@ -67,9 +67,12 @@ describe("update command", () => {
       it("should work with other flags", () => {
         const result = parseUpdateArgs([
           "abc123",
-          "--title", "New Title",
-          "--collect-emails", "verified",
-          "--description", "New Desc",
+          "--title",
+          "New Title",
+          "--collect-emails",
+          "verified",
+          "--description",
+          "New Desc",
         ]);
         expect(result.success).toBe(true);
         if (result.success) {

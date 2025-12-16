@@ -4,14 +4,14 @@ import { success, error } from "../utils/output";
 
 export const VALID_COLLECT_EMAILS_VALUES = ["none", "verified", "input"] as const;
 
-export interface UpdateArgs {
+interface UpdateArgs {
   formId?: string;
   title?: string;
   description?: string;
   collectEmails?: EmailCollectionType;
 }
 
-export type ParseResult =
+type ParseResult =
   | {
       success: true;
       args: Required<Pick<UpdateArgs, "formId">> & Omit<UpdateArgs, "formId">;
@@ -50,7 +50,8 @@ export function parseUpdateArgs(args: string[]): ParseResult {
   if (!formId) {
     return {
       success: false,
-      error: 'Usage: gforms update <form-id> [--title "..."] [--description "..."] [--collect-emails none|verified|input]',
+      error:
+        'Usage: gforms update <form-id> [--title "..."] [--description "..."] [--collect-emails none|verified|input]',
     };
   }
 
