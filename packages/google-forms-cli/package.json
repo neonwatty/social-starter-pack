@@ -1,6 +1,6 @@
 {
   "name": "@neonwatty/google-forms-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI tool for managing Google Forms - create forms, add questions, and export responses",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

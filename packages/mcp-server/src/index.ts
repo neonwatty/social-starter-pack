@@ -352,6 +352,11 @@ const tools: Tool[] = [
         formId: { type: "string", description: "Form ID" },
         title: { type: "string", description: "New title" },
         description: { type: "string", description: "New description" },
+        collectEmails: {
+          type: "string",
+          enum: ["none", "verified", "input"],
+          description: "Email collection: none (don't collect), verified (Google account email), input (user types email)",
+        },
       },
       required: ["formId"],
     },
@@ -390,6 +395,18 @@ const tools: Tool[] = [
         highLabel: { type: "string", description: "Scale high label" },
       },
       required: ["formId", "type", "title"],
+    },
+  },
+  {
+    name: "gforms_delete_question",
+    description: "Delete a question from a Google Form",
+    inputSchema: {
+      type: "object",
+      properties: {
+        formId: { type: "string", description: "Form ID" },
+        itemId: { type: "string", description: "Item ID of the question to delete" },
+      },
+      required: ["formId", "itemId"],
     },
   },
   {
@@ -641,6 +658,12 @@ async function handleToolCall(
           "--type", type as string,
           "--title", title as string,
           ...buildArgs(opts),
+        ]);
+      }
+      case "gforms_delete_question": {
+        const { formId, itemId } = args;
+        return await runCommand("gforms", [
+          "delete-question", formId as string, itemId as string,
         ]);
       }
       case "gforms_responses": {

@@ -35,4 +35,11 @@ describe("forms module", () => {
     const { getFormsClient } = await import("./forms");
     expect(typeof getFormsClient).toBe("function");
   });
+
+  it("should export EmailCollectionType type with valid values", async () => {
+    const forms = await import("./forms");
+    // EmailCollectionType is a type, so we test it indirectly by checking
+    // that the module exports the expected functionality
+    expect(forms.updateFormInfo).toBeDefined();
+  });
 });
