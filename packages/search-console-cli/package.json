@@ -1,0 +1,68 @@
+{
+  "name": "@neonwatty/search-console-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for querying Google Search Console data - search analytics, keywords, and page performance",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "gsc": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "ts-node src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "knip": "knip",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "google-search-console",
+    "search-console",
+    "seo",
+    "cli",
+    "google",
+    "api",
+    "search-analytics",
+    "keywords"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neonwatty/social-starter-pack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/neonwatty/social-starter-pack/issues"
+  },
+  "homepage": "https://github.com/neonwatty/social-starter-pack/tree/main/packages/search-console-cli#readme",
+  "dependencies": {
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^166.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "knip": "^5.38.0",
+    "prettier": "^3.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.17.0",
+    "vitest": "^2.1.8"
+  }
+}
