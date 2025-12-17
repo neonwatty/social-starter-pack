@@ -45,11 +45,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run tests
-        run: npm test
-
       - name: Build
         run: npm run build
+
+      - name: Run tests
+        run: npm test
 
       - name: Publish to npm
         run: npm publish --provenance --access public
