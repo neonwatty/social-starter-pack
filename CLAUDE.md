@@ -13,6 +13,7 @@ CLI tools for keyword research, content creation, and social media management.
 | Post tweets & manage X/Twitter content | `twitter` |
 | Post updates & manage LinkedIn content | `linkedin` |
 | Create & manage Google Forms | `gforms` |
+| Query Search Console data (keywords, clicks) | `gsc` |
 | Spawn Claude Code in new terminals (macOS) | `spawn-claude` |
 | Use all tools via Claude Code | `mcp-server` |
 
@@ -77,6 +78,17 @@ linkedin status                                       # Check token status
 ```
 [Full docs](./docs/linkedin-cli.md)
 
+### search-console-cli
+Query Google Search Console for keywords, pages, clicks, and impressions.
+```bash
+gsc auth                                              # First-time auth
+gsc sites                                             # List verified sites
+gsc query https://example.com --dimensions query      # Top keywords
+gsc query https://example.com --dimensions page       # Top pages
+gsc query https://example.com --filter-page "/blog/"  # Filter by page
+gsc query https://example.com --days 30 --json        # Last 30 days as JSON
+```
+
 ### spawn-claude
 Spawn Claude Code instances in new Ghostty terminals (macOS only).
 ```bash
@@ -113,6 +125,7 @@ Once installed, Claude can:
 - Manage YouTube videos
 - Record demos & screenshots
 - Create/manage Google Forms
+- Query Search Console data (`gsc`)
 
 ## Secrets
 
