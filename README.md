@@ -33,6 +33,7 @@ Designed for Claude Code, Codex, and similar AI coding assistants. This is not a
 | [twitter-cli](./packages/twitter-cli) | Post tweets & manage X/Twitter content | npm |
 | [linkedin-cli](./packages/linkedin-cli) | Post updates & manage LinkedIn content | npm |
 | [google-forms-cli](./packages/google-forms-cli) | Create forms, add questions, export responses | npm |
+| [spawn-claude](./packages/spawn-claude) | Spawn Claude Code in new Ghostty terminals (macOS) | npm |
 | [mcp-server](./packages/mcp-server) | MCP server for Claude Code integration | npm |
 
 ## Quick Example

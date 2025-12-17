@@ -1,4 +1,4 @@
-.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin test-gforms install-mcp uninstall-mcp
+.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin test-gforms test-spawn-claude install-mcp uninstall-mcp spawn-claude
 
 # Default target
 help:
@@ -24,6 +24,7 @@ help:
 	@echo "  make test-twitter"
 	@echo "  make test-linkedin"
 	@echo "  make test-gforms"
+	@echo "  make test-spawn-claude"
 	@echo "  make test-reddit"
 	@echo ""
 	@echo "Utilities:"
@@ -34,6 +35,7 @@ help:
 	@echo "  make twitter          Run twitter-cli (use ARGS='...' for arguments)"
 	@echo "  make linkedin         Run linkedin-cli (use ARGS='...' for arguments)"
 	@echo "  make gforms           Run google-forms-cli (use ARGS='...' for arguments)"
+	@echo "  make spawn-claude     Spawn Claude Code in new Ghostty terminal"
 
 # ============================================================================
 # Installation
@@ -50,7 +52,8 @@ install-node:
 	cd packages/twitter-cli && npm install && npm run build && npm link --force
 	cd packages/linkedin-cli && npm install && npm run build && npm link --force
 	cd packages/google-forms-cli && npm install && npm run build && npm link --force
-	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'youtube --help', 'twitter --help', 'linkedin --help', and 'gforms --help' to verify."
+	cd packages/spawn-claude && npm install && npm run build && npm link --force
+	@echo "Done! Run 'autocomplete --help', 'demo-recorder --help', 'youtube --help', 'twitter --help', 'linkedin --help', 'gforms --help', and 'spawn-claude --help' to verify."
 
 install-python:
 	@echo "Installing reddit-market-research..."
@@ -143,11 +146,15 @@ linkedin:
 gforms:
 	@./scripts/run-with-secrets.sh gforms $(ARGS)
 
+# Spawn Claude Code in new Ghostty terminal
+spawn-claude:
+	@./scripts/spawn-claude.sh $(ARGS)
+
 # ============================================================================
 # Testing
 # ============================================================================
 
-test: test-autocomplete test-demo-recorder test-youtube test-twitter test-linkedin test-gforms test-reddit
+test: test-autocomplete test-demo-recorder test-youtube test-twitter test-linkedin test-gforms test-spawn-claude test-reddit
 	@echo "All tests passed!"
 
 test-autocomplete:
@@ -173,6 +180,10 @@ test-linkedin:
 test-gforms:
 	@echo "Testing google-forms-cli..."
 	cd packages/google-forms-cli && npm test
+
+test-spawn-claude:
+	@echo "Testing spawn-claude..."
+	cd packages/spawn-claude && npm test
 
 test-reddit:
 	@echo "Testing reddit-market-research..."
@@ -215,6 +226,11 @@ check:
 		echo "  [OK] google-forms-cli (gforms)"; \
 	else \
 		echo "  [MISSING] google-forms-cli - run 'make install-node'"; \
+	fi
+	@if command -v spawn-claude &> /dev/null; then \
+		echo "  [OK] spawn-claude"; \
+	else \
+		echo "  [MISSING] spawn-claude - run 'make install-node'"; \
 	fi
 	@echo ""
 	@echo "Python packages:"

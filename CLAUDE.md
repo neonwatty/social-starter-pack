@@ -13,6 +13,7 @@ CLI tools for keyword research, content creation, and social media management.
 | Post tweets & manage X/Twitter content | `twitter` |
 | Post updates & manage LinkedIn content | `linkedin` |
 | Create & manage Google Forms | `gforms` |
+| Spawn Claude Code in new terminals (macOS) | `spawn-claude` |
 | Use all tools via Claude Code | `mcp-server` |
 
 ## Tools
@@ -75,6 +76,18 @@ linkedin whoami                                       # View current user
 linkedin status                                       # Check token status
 ```
 [Full docs](./docs/linkedin-cli.md)
+
+### spawn-claude
+Spawn Claude Code instances in new Ghostty terminals (macOS only).
+```bash
+spawn-claude                     # New window with yolo
+spawn-claude -t                  # New tab
+spawn-claude -r                  # Split right
+spawn-claude --split-down        # Split down
+spawn-claude -p "fix the tests"  # With initial prompt
+spawn-claude --safe              # Use claude instead of yolo
+spawn-claude -r -c 3             # 3 split-right panes
+```
 
 ## Setup
 
