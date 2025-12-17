@@ -448,6 +448,73 @@ const tools: Tool[] = [
       required: ["file"],
     },
   },
+
+  // Spawn Claude tools
+  {
+    name: "spawn_claude",
+    description: "Spawn Claude Code instances in new Ghostty terminals (macOS only)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        mode: {
+          type: "string",
+          enum: ["window", "tab", "split-right", "split-down"],
+          description: "How to open: window (default), tab, split-right, split-down",
+        },
+        prompt: { type: "string", description: "Initial prompt for Claude" },
+        dir: { type: "string", description: "Directory to start in" },
+        count: { type: "number", description: "Number of instances to spawn" },
+        safe: { type: "boolean", description: "Use claude instead of yolo alias" },
+      },
+    },
+  },
+
+  // Google Search Console tools
+  {
+    name: "gsc_auth",
+    description: "Authenticate with Google Search Console (opens browser)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "boolean", description: "Check auth status instead of authenticating" },
+        logout: { type: "boolean", description: "Clear stored credentials" },
+      },
+    },
+  },
+  {
+    name: "gsc_sites",
+    description: "List verified sites in Google Search Console",
+    inputSchema: {
+      type: "object",
+      properties: {
+        json: { type: "boolean", description: "Output as JSON" },
+      },
+    },
+  },
+  {
+    name: "gsc_query",
+    description: "Query Google Search Console analytics data (impressions, clicks, keywords, pages)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        siteUrl: { type: "string", description: "Site URL (e.g., https://example.com or sc-domain:example.com)" },
+        days: { type: "number", description: "Last N days of data (default: 7)" },
+        start: { type: "string", description: "Start date (YYYY-MM-DD)" },
+        end: { type: "string", description: "End date (YYYY-MM-DD)" },
+        dimensions: { type: "string", description: "Comma-separated: query,page,country,device,date" },
+        filterQuery: { type: "string", description: "Filter by search query (contains)" },
+        filterPage: { type: "string", description: "Filter by page URL (contains)" },
+        filterCountry: { type: "string", description: "Filter by country code (e.g., usa, gbr)" },
+        filterDevice: { type: "string", description: "Filter by device: mobile, desktop, tablet" },
+        type: { type: "string", enum: ["web", "image", "video", "news", "discover"], description: "Search type" },
+        limit: { type: "number", description: "Max rows to return (default: 25)" },
+        sort: { type: "string", enum: ["clicks", "impressions", "ctr", "position"], description: "Sort results by field" },
+        json: { type: "boolean", description: "Output as JSON" },
+        csv: { type: "boolean", description: "Output as CSV" },
+      },
+      required: ["siteUrl"],
+    },
+  },
 ];
 
 // Execute CLI command and return output
@@ -677,6 +744,35 @@ async function handleToolCall(
       case "gforms_import": {
         const { file, ...opts } = args;
         return await runCommand("gforms", ["import", file as string, ...buildArgs(opts)]);
+      }
+
+      // Spawn Claude
+      case "spawn_claude": {
+        const { mode, prompt, dir, count, safe } = args;
+        const cliArgs: string[] = [];
+        if (mode === "tab") cliArgs.push("--tab");
+        else if (mode === "split-right") cliArgs.push("--split-right");
+        else if (mode === "split-down") cliArgs.push("--split-down");
+        else if (mode === "window") cliArgs.push("--window");
+        if (prompt) cliArgs.push("--prompt", prompt as string);
+        if (dir) cliArgs.push("--dir", dir as string);
+        if (count) cliArgs.push("--count", String(count));
+        if (safe) cliArgs.push("--safe");
+        return await runCommand("spawn-claude", cliArgs);
+      }
+
+      // Google Search Console
+      case "gsc_auth": {
+        const cliArgs = ["auth"];
+        if (args.status) cliArgs.push("--status");
+        if (args.logout) cliArgs.push("--logout");
+        return await runCommand("gsc", cliArgs);
+      }
+      case "gsc_sites":
+        return await runCommand("gsc", ["sites", ...buildArgs(args)]);
+      case "gsc_query": {
+        const { siteUrl, ...opts } = args;
+        return await runCommand("gsc", ["query", siteUrl as string, ...buildArgs(opts)]);
       }
 
       default:
