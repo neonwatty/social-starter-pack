@@ -4,9 +4,6 @@ import { program } from "commander";
 import { spawnClaude, checkPlatform } from "./spawner.js";
 import type { SpawnMode } from "./spawner.js";
 
-// Check platform before doing anything
-checkPlatform();
-
 program
   .name("spawn-claude")
   .description(
@@ -37,6 +34,9 @@ By default uses 'yolo' alias (claude --dangerously-skip-permissions)
 `,
   )
   .action((options) => {
+    // Check platform only when actually spawning (not for --help/--version)
+    checkPlatform();
+
     // Determine mode (default to window)
     let mode: SpawnMode = "window";
     if (options.tab) mode = "tab";
