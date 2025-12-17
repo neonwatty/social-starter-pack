@@ -108,7 +108,8 @@ spawn_one() {
 
     if [[ -n "$PROMPT" ]]; then
         # For prompts, write to a temp file to avoid escaping issues
-        local tmpfile=$(mktemp)
+        local tmpfile
+        tmpfile=$(mktemp)
         echo "$PROMPT" > "$tmpfile"
         claude_cmd="$CLAUDE_CMD \"\$(cat $tmpfile)\""
     fi
