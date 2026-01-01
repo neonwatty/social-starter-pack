@@ -469,6 +469,64 @@ const tools: Tool[] = [
     },
   },
 
+  // Scheduler tools
+  {
+    name: "scheduler_config",
+    description: "Configure the social scheduler with GitHub repo settings",
+    inputSchema: {
+      type: "object",
+      properties: {
+        token: { type: "string", description: "GitHub personal access token" },
+        owner: { type: "string", description: "Repository owner (username or org)" },
+        repo: { type: "string", description: "Repository name" },
+      },
+    },
+  },
+  {
+    name: "scheduler_schedule",
+    description: "Schedule a social media post for future publishing",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Post content text" },
+        platforms: { type: "string", description: "Comma-separated platforms: twitter,linkedin,reddit" },
+        at: { type: "string", description: "Schedule time (ISO 8601 or YYYY-MM-DD HH:mm)" },
+        subreddit: { type: "string", description: "For Reddit: subreddit name" },
+        title: { type: "string", description: "For Reddit: post title" },
+        visibility: { type: "string", enum: ["public", "connections"], description: "For LinkedIn: visibility" },
+        json: { type: "boolean", description: "Output as JSON" },
+      },
+      required: ["text", "platforms", "at"],
+    },
+  },
+  {
+    name: "scheduler_list",
+    description: "List all scheduled posts",
+    inputSchema: {
+      type: "object",
+      properties: {
+        json: { type: "boolean", description: "Output as JSON" },
+        limit: { type: "number", description: "Max posts to show" },
+      },
+    },
+  },
+  {
+    name: "scheduler_cancel",
+    description: "Cancel a scheduled post by ID",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Post ID to cancel" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "scheduler_status",
+    description: "Show scheduler configuration status",
+    inputSchema: { type: "object", properties: {} },
+  },
+
   // Google Search Console tools
   {
     name: "gsc_auth",
@@ -760,6 +818,42 @@ async function handleToolCall(
         if (safe) cliArgs.push("--safe");
         return await runCommand("spawn-claude", cliArgs);
       }
+
+      // Scheduler
+      case "scheduler_config": {
+        const { token, owner, repo } = args;
+        const cliArgs = ["config"];
+        if (token) cliArgs.push("--token", token as string);
+        if (owner) cliArgs.push("--owner", owner as string);
+        if (repo) cliArgs.push("--repo", repo as string);
+        return await runCommand("scheduler", cliArgs);
+      }
+      case "scheduler_schedule": {
+        const { text, platforms, at, subreddit, title, visibility, json: jsonOutput } = args;
+        const cliArgs = [
+          "schedule",
+          "--text", text as string,
+          "--platforms", platforms as string,
+          "--at", at as string,
+        ];
+        if (subreddit) cliArgs.push("--subreddit", subreddit as string);
+        if (title) cliArgs.push("--title", title as string);
+        if (visibility) cliArgs.push("--visibility", visibility as string);
+        if (jsonOutput) cliArgs.push("--json");
+        return await runCommand("scheduler", cliArgs);
+      }
+      case "scheduler_list": {
+        const cliArgs = ["list"];
+        if (args.json) cliArgs.push("--json");
+        if (args.limit) cliArgs.push("--limit", String(args.limit));
+        return await runCommand("scheduler", cliArgs);
+      }
+      case "scheduler_cancel": {
+        const { id } = args;
+        return await runCommand("scheduler", ["cancel", id as string]);
+      }
+      case "scheduler_status":
+        return await runCommand("scheduler", ["status"]);
 
       // Google Search Console
       case "gsc_auth": {
