@@ -18,7 +18,7 @@ Designed for Claude Code, Codex, and similar AI coding assistants. This is not a
 │             │     │             │     │             │
 │ autocomplete│     │ Claude Code │     │ twitter-cli │
 │ reddit-mkt  │     │ + your brain│     │ linkedin-cli│
-│             │     │             │     │ youtube-cli │
+│             │     │ + cloudinary│     │ youtube-cli │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
@@ -94,7 +94,7 @@ make install-mcp      # Install & configure MCP server
 # Restart Claude Code
 ```
 
-This gives Claude access to: autocomplete, YouTube, Twitter, LinkedIn, Reddit search, demo recording, and Google Forms tools.
+This gives Claude access to: autocomplete, YouTube, Twitter, LinkedIn, Reddit search, demo recording, Google Forms, and Cloudinary asset management tools.
 
 ## Development
 
