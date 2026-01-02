@@ -8,6 +8,14 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { spawn } from "child_process";
+import { v2 as cloudinary } from "cloudinary";
+
+// Configure Cloudinary from environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Tool definitions - kept minimal for low context overhead
 const tools: Tool[] = [
@@ -483,6 +491,23 @@ const tools: Tool[] = [
     },
   },
   {
+    name: "scheduler_draft",
+    description: "Create a draft social media post",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Post content text" },
+        platforms: { type: "string", description: "Comma-separated platforms: twitter,linkedin,reddit" },
+        subreddit: { type: "string", description: "For Reddit: subreddit name" },
+        title: { type: "string", description: "For Reddit: post title" },
+        visibility: { type: "string", enum: ["public", "connections"], description: "For LinkedIn: visibility" },
+        flair: { type: "string", description: "For Reddit: flair text" },
+        json: { type: "boolean", description: "Output as JSON" },
+      },
+      required: ["text", "platforms"],
+    },
+  },
+  {
     name: "scheduler_schedule",
     description: "Schedule a social media post for future publishing",
     inputSchema: {
@@ -494,6 +519,7 @@ const tools: Tool[] = [
         subreddit: { type: "string", description: "For Reddit: subreddit name" },
         title: { type: "string", description: "For Reddit: post title" },
         visibility: { type: "string", enum: ["public", "connections"], description: "For LinkedIn: visibility" },
+        flair: { type: "string", description: "For Reddit: flair text" },
         json: { type: "boolean", description: "Output as JSON" },
       },
       required: ["text", "platforms", "at"],
@@ -501,22 +527,35 @@ const tools: Tool[] = [
   },
   {
     name: "scheduler_list",
-    description: "List all scheduled posts",
+    description: "List posts (drafts, scheduled, or all)",
     inputSchema: {
       type: "object",
       properties: {
+        status: { type: "string", enum: ["drafts", "scheduled", "published", "all"], description: "Filter by status" },
         json: { type: "boolean", description: "Output as JSON" },
         limit: { type: "number", description: "Max posts to show" },
       },
     },
   },
   {
-    name: "scheduler_cancel",
-    description: "Cancel a scheduled post by ID",
+    name: "scheduler_get",
+    description: "Get a post by ID",
     inputSchema: {
       type: "object",
       properties: {
-        id: { type: "string", description: "Post ID to cancel" },
+        id: { type: "string", description: "Post ID" },
+        json: { type: "boolean", description: "Output as JSON" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "scheduler_delete",
+    description: "Delete a post by ID",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Post ID to delete" },
       },
       required: ["id"],
     },
@@ -571,6 +610,76 @@ const tools: Tool[] = [
         csv: { type: "boolean", description: "Output as CSV" },
       },
       required: ["siteUrl"],
+    },
+  },
+
+  // Cloudinary tools
+  {
+    name: "cloudinary_upload",
+    description: "Upload an image or video to Cloudinary",
+    inputSchema: {
+      type: "object",
+      properties: {
+        file: { type: "string", description: "Path to local file or URL to upload" },
+        folder: { type: "string", description: "Folder to upload to" },
+        publicId: { type: "string", description: "Custom public ID for the asset" },
+        tags: { type: "string", description: "Comma-separated tags" },
+        resourceType: { type: "string", enum: ["image", "video", "raw", "auto"], description: "Resource type (default: auto)" },
+      },
+      required: ["file"],
+    },
+  },
+  {
+    name: "cloudinary_list",
+    description: "List assets in Cloudinary",
+    inputSchema: {
+      type: "object",
+      properties: {
+        resourceType: { type: "string", enum: ["image", "video", "raw"], description: "Resource type to list" },
+        maxResults: { type: "number", description: "Max results to return (default: 10)" },
+        prefix: { type: "string", description: "Filter by public ID prefix" },
+        tags: { type: "boolean", description: "Include tags in response" },
+      },
+    },
+  },
+  {
+    name: "cloudinary_search",
+    description: "Search assets in Cloudinary",
+    inputSchema: {
+      type: "object",
+      properties: {
+        expression: { type: "string", description: "Search expression (e.g., 'tags=product', 'folder=social')" },
+        maxResults: { type: "number", description: "Max results to return (default: 10)" },
+        sortBy: { type: "string", description: "Field to sort by (e.g., 'created_at', 'public_id')" },
+        sortOrder: { type: "string", enum: ["asc", "desc"], description: "Sort order" },
+      },
+      required: ["expression"],
+    },
+  },
+  {
+    name: "cloudinary_delete",
+    description: "Delete an asset from Cloudinary",
+    inputSchema: {
+      type: "object",
+      properties: {
+        publicId: { type: "string", description: "Public ID of the asset to delete" },
+        resourceType: { type: "string", enum: ["image", "video", "raw"], description: "Resource type (default: image)" },
+      },
+      required: ["publicId"],
+    },
+  },
+  {
+    name: "cloudinary_url",
+    description: "Generate a Cloudinary URL with transformations",
+    inputSchema: {
+      type: "object",
+      properties: {
+        publicId: { type: "string", description: "Public ID of the asset" },
+        resourceType: { type: "string", enum: ["image", "video"], description: "Resource type (default: image)" },
+        transformation: { type: "string", description: "Transformation string (e.g., 'w_300,h_200,c_fill')" },
+        format: { type: "string", description: "Output format (e.g., 'jpg', 'png', 'webp')" },
+      },
+      required: ["publicId"],
     },
   },
 ];
@@ -828,8 +937,22 @@ async function handleToolCall(
         if (repo) cliArgs.push("--repo", repo as string);
         return await runCommand("scheduler", cliArgs);
       }
+      case "scheduler_draft": {
+        const { text, platforms, subreddit, title, visibility, flair, json: jsonOutput } = args;
+        const cliArgs = [
+          "draft",
+          "--text", text as string,
+          "--platforms", platforms as string,
+        ];
+        if (subreddit) cliArgs.push("--subreddit", subreddit as string);
+        if (title) cliArgs.push("--title", title as string);
+        if (visibility) cliArgs.push("--visibility", visibility as string);
+        if (flair) cliArgs.push("--flair", flair as string);
+        if (jsonOutput) cliArgs.push("--json");
+        return await runCommand("scheduler", cliArgs);
+      }
       case "scheduler_schedule": {
-        const { text, platforms, at, subreddit, title, visibility, json: jsonOutput } = args;
+        const { text, platforms, at, subreddit, title, visibility, flair, json: jsonOutput } = args;
         const cliArgs = [
           "schedule",
           "--text", text as string,
@@ -839,18 +962,26 @@ async function handleToolCall(
         if (subreddit) cliArgs.push("--subreddit", subreddit as string);
         if (title) cliArgs.push("--title", title as string);
         if (visibility) cliArgs.push("--visibility", visibility as string);
+        if (flair) cliArgs.push("--flair", flair as string);
         if (jsonOutput) cliArgs.push("--json");
         return await runCommand("scheduler", cliArgs);
       }
       case "scheduler_list": {
         const cliArgs = ["list"];
+        if (args.status) cliArgs.push("--status", args.status as string);
         if (args.json) cliArgs.push("--json");
         if (args.limit) cliArgs.push("--limit", String(args.limit));
         return await runCommand("scheduler", cliArgs);
       }
-      case "scheduler_cancel": {
+      case "scheduler_get": {
         const { id } = args;
-        return await runCommand("scheduler", ["cancel", id as string]);
+        const cliArgs = ["get", id as string];
+        if (args.json) cliArgs.push("--json");
+        return await runCommand("scheduler", cliArgs);
+      }
+      case "scheduler_delete": {
+        const { id } = args;
+        return await runCommand("scheduler", ["delete", id as string]);
       }
       case "scheduler_status":
         return await runCommand("scheduler", ["status"]);
@@ -867,6 +998,85 @@ async function handleToolCall(
       case "gsc_query": {
         const { siteUrl, ...opts } = args;
         return await runCommand("gsc", ["query", siteUrl as string, ...buildArgs(opts)]);
+      }
+
+      // Cloudinary
+      case "cloudinary_upload": {
+        const { file, folder, publicId, tags, resourceType } = args;
+        const options: Record<string, unknown> = {};
+        if (folder) options.folder = folder;
+        if (publicId) options.public_id = publicId;
+        if (tags) options.tags = (tags as string).split(",").map(t => t.trim());
+        options.resource_type = (resourceType as "image" | "video" | "raw" | "auto") || "auto";
+        const result = await cloudinary.uploader.upload(file as string, options);
+        return JSON.stringify({
+          publicId: result.public_id,
+          url: result.secure_url,
+          format: result.format,
+          width: result.width,
+          height: result.height,
+          bytes: result.bytes,
+          resourceType: result.resource_type,
+        }, null, 2);
+      }
+      case "cloudinary_list": {
+        const { resourceType, maxResults, prefix, tags: includeTags } = args;
+        const options: Record<string, unknown> = {
+          max_results: maxResults || 10,
+        };
+        if (prefix) options.prefix = prefix;
+        if (includeTags) options.tags = true;
+        const result = await cloudinary.api.resources({
+          ...options,
+          resource_type: (resourceType as string) || "image",
+        });
+        return JSON.stringify(result.resources.map((r: Record<string, unknown>) => ({
+          publicId: r.public_id,
+          url: r.secure_url,
+          format: r.format,
+          width: r.width,
+          height: r.height,
+          bytes: r.bytes,
+          createdAt: r.created_at,
+          tags: r.tags,
+        })), null, 2);
+      }
+      case "cloudinary_search": {
+        const { expression, maxResults, sortBy, sortOrder } = args;
+        let search = cloudinary.search.expression(expression as string);
+        if (maxResults) search = search.max_results(maxResults as number);
+        if (sortBy) search = search.sort_by(sortBy as string, ((sortOrder as string) || "desc") as "asc" | "desc");
+        const result = await search.execute();
+        return JSON.stringify(result.resources.map((r: Record<string, unknown>) => ({
+          publicId: r.public_id,
+          url: r.secure_url,
+          format: r.format,
+          width: r.width,
+          height: r.height,
+          bytes: r.bytes,
+          createdAt: r.created_at,
+          folder: r.folder,
+          tags: r.tags,
+        })), null, 2);
+      }
+      case "cloudinary_delete": {
+        const { publicId, resourceType } = args;
+        const result = await cloudinary.uploader.destroy(publicId as string, {
+          resource_type: (resourceType as string) || "image",
+        });
+        return JSON.stringify(result, null, 2);
+      }
+      case "cloudinary_url": {
+        const { publicId, resourceType, transformation, format } = args;
+        const options: Record<string, unknown> = {};
+        if (transformation) options.transformation = transformation;
+        if (format) options.format = format;
+        const url = cloudinary.url(publicId as string, {
+          ...options,
+          resource_type: (resourceType as string) || "image",
+          secure: true,
+        });
+        return JSON.stringify({ url }, null, 2);
       }
 
       default:
