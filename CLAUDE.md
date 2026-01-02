@@ -14,6 +14,7 @@ CLI tools for keyword research, content creation, and social media management.
 | Post updates & manage LinkedIn content | `linkedin` |
 | Create & manage Google Forms | `gforms` |
 | Query Search Console data (keywords, clicks) | `gsc` |
+| Upload & manage media assets | `cloudinary` (via MCP) |
 | Spawn Claude Code in new terminals (macOS) | `spawn-claude` |
 | Use all tools via Claude Code | `mcp-server` |
 
@@ -101,6 +102,18 @@ spawn-claude --safe              # Use claude instead of yolo
 spawn-claude -r -c 3             # 3 split-right panes
 ```
 
+### cloudinary (MCP only)
+Upload and manage media assets for social posts. Available via the MCP server.
+```
+# Via Claude Code MCP:
+cloudinary_upload    # Upload image/video to Cloudinary
+cloudinary_list      # List assets by type
+cloudinary_search    # Search assets by expression
+cloudinary_delete    # Delete an asset
+cloudinary_url       # Generate URL with transformations
+```
+[Full docs](./docs/cloudinary.md)
+
 ## Setup
 
 ```bash
@@ -126,9 +139,12 @@ Once installed, Claude can:
 - Record demos & screenshots
 - Create/manage Google Forms
 - Query Search Console data (`gsc`)
+- Upload & manage media assets (`cloudinary`)
 
 ## Secrets
 
-YouTube, Reddit, Twitter, and LinkedIn tools require API credentials. Configure via:
+YouTube, Reddit, Twitter, LinkedIn, and Cloudinary tools require API credentials. Configure via:
 - Doppler: `make doppler-connect`
 - Or `.env` file (copy from `.env.example`)
+
+Cloudinary requires: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
