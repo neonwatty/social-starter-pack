@@ -498,6 +498,7 @@ const tools: Tool[] = [
       properties: {
         text: { type: "string", description: "Post content text" },
         platforms: { type: "string", description: "Comma-separated platforms: twitter,linkedin,reddit" },
+        media: { type: "string", description: "Comma-separated Cloudinary media URLs (for Twitter)" },
         subreddit: { type: "string", description: "For Reddit: subreddit name" },
         title: { type: "string", description: "For Reddit: post title" },
         visibility: { type: "string", enum: ["public", "connections"], description: "For LinkedIn: visibility" },
@@ -516,6 +517,7 @@ const tools: Tool[] = [
         text: { type: "string", description: "Post content text" },
         platforms: { type: "string", description: "Comma-separated platforms: twitter,linkedin,reddit" },
         at: { type: "string", description: "Schedule time (ISO 8601 or YYYY-MM-DD HH:mm)" },
+        media: { type: "string", description: "Comma-separated Cloudinary media URLs (for Twitter)" },
         subreddit: { type: "string", description: "For Reddit: subreddit name" },
         title: { type: "string", description: "For Reddit: post title" },
         visibility: { type: "string", enum: ["public", "connections"], description: "For LinkedIn: visibility" },
@@ -938,12 +940,13 @@ async function handleToolCall(
         return await runCommand("scheduler", cliArgs);
       }
       case "scheduler_draft": {
-        const { text, platforms, subreddit, title, visibility, flair, json: jsonOutput } = args;
+        const { text, platforms, media, subreddit, title, visibility, flair, json: jsonOutput } = args;
         const cliArgs = [
           "draft",
           "--text", text as string,
           "--platforms", platforms as string,
         ];
+        if (media) cliArgs.push("--media", media as string);
         if (subreddit) cliArgs.push("--subreddit", subreddit as string);
         if (title) cliArgs.push("--title", title as string);
         if (visibility) cliArgs.push("--visibility", visibility as string);
@@ -952,13 +955,14 @@ async function handleToolCall(
         return await runCommand("scheduler", cliArgs);
       }
       case "scheduler_schedule": {
-        const { text, platforms, at, subreddit, title, visibility, flair, json: jsonOutput } = args;
+        const { text, platforms, at, media, subreddit, title, visibility, flair, json: jsonOutput } = args;
         const cliArgs = [
           "schedule",
           "--text", text as string,
           "--platforms", platforms as string,
           "--at", at as string,
         ];
+        if (media) cliArgs.push("--media", media as string);
         if (subreddit) cliArgs.push("--subreddit", subreddit as string);
         if (title) cliArgs.push("--title", title as string);
         if (visibility) cliArgs.push("--visibility", visibility as string);

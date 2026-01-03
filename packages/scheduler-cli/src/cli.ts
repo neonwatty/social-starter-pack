@@ -1,8 +1,16 @@
 #!/usr/bin/env node
 
 import { getConfig, saveConfig, clearConfig, requireConfig } from './config.js'
-import { createScheduledPost, listScheduledPosts, cancelScheduledPost } from './github.js'
-import type { Post, Platform } from './types.js'
+import {
+  createScheduledPost,
+  createDraftPost,
+  listScheduledPosts,
+  listDraftPosts,
+  listAllPosts,
+  deletePostAny,
+  getPost,
+} from './github.js'
+import type { Post, Platform, PostFolder } from './types.js'
 
 interface ParsedArgs {
   command: string
@@ -67,9 +75,11 @@ USAGE:
 
 COMMANDS:
   config                  Configure GitHub repo settings
+  draft                   Create a draft post
   schedule                Create a scheduled post
-  list                    List scheduled posts
-  cancel <id>             Cancel a scheduled post
+  list                    List posts (drafts, scheduled, or all)
+  get <id>                Get a post by ID
+  delete <id>             Delete a post by ID
   status                  Show configuration status
   help                    Show this help message
 
@@ -78,21 +88,27 @@ CONFIG OPTIONS:
   --owner <owner>         Repository owner (username or org)
   --repo <repo>           Repository name
 
-SCHEDULE OPTIONS:
+DRAFT/SCHEDULE OPTIONS:
   --text <text>           Post content text (required)
   --platforms <p1,p2>     Comma-separated: twitter,linkedin,reddit (required)
-  --at <datetime>         Schedule time (ISO 8601 or "YYYY-MM-DD HH:mm")
+  --at <datetime>         Schedule time (ISO 8601 or "YYYY-MM-DD HH:mm") - for schedule only
+  --media <url1,url2>     Comma-separated media URLs (images/videos) - for Twitter
   --subreddit <name>      For Reddit: subreddit name
   --title <title>         For Reddit: post title
   --visibility <v>        For LinkedIn: public or connections
+  --flair <text>          For Reddit: flair text
 
 LIST OPTIONS:
+  --status <status>       Filter: drafts, scheduled, published, all (default: all)
   --json                  Output as JSON
   --limit <n>             Limit number of results
 
 EXAMPLES:
   # Configure
   scheduler config --token ghp_xxx --owner myuser --repo social-scheduler
+
+  # Create a draft
+  scheduler draft --text "Working on this..." --platforms twitter
 
   # Schedule a Twitter post
   scheduler schedule --text "Hello world!" --platforms twitter --at "2024-12-25 10:00"
@@ -103,10 +119,15 @@ EXAMPLES:
   # Schedule Reddit post
   scheduler schedule --text "Check this out" --platforms reddit --subreddit programming --title "My Project" --at "2024-12-25 10:00"
 
-  # List and manage
-  scheduler list
-  scheduler list --json
-  scheduler cancel abc123
+  # List posts
+  scheduler list                      # All posts
+  scheduler list --status drafts      # Only drafts
+  scheduler list --status scheduled   # Only scheduled
+  scheduler list --json               # JSON output
+
+  # Manage posts
+  scheduler get abc123
+  scheduler delete abc123
 `)
 }
 
@@ -152,15 +173,15 @@ function handleStatus(): void {
   console.log('')
 }
 
-async function handleSchedule(args: ParsedArgs): Promise<void> {
-  const config = requireConfig()
-
+function buildPost(args: ParsedArgs, isDraft: boolean): Post {
   const text = args.flags['text'] as string | undefined
   const platformsStr = args.flags['platforms'] as string | undefined
   const at = args.flags['at'] as string | undefined
   const subreddit = args.flags['subreddit'] as string | undefined
   const title = args.flags['title'] as string | undefined
   const visibility = (args.flags['visibility'] as string) || 'public'
+  const flair = args.flags['flair'] as string | undefined
+  const mediaStr = args.flags['media'] as string | undefined
 
   if (!text) {
     console.error('Error: --text is required')
@@ -172,8 +193,8 @@ async function handleSchedule(args: ParsedArgs): Promise<void> {
     process.exit(1)
   }
 
-  if (!at) {
-    console.error('Error: --at is required (ISO 8601 datetime)')
+  if (!isDraft && !at) {
+    console.error('Error: --at is required for scheduling (ISO 8601 datetime)')
     process.exit(1)
   }
 
@@ -186,8 +207,8 @@ async function handleSchedule(args: ParsedArgs): Promise<void> {
     }
   }
 
-  // Validate Reddit requirements
-  if (platforms.includes('reddit')) {
+  // Validate Reddit requirements for scheduled posts
+  if (platforms.includes('reddit') && !isDraft) {
     if (!subreddit) {
       console.error('Error: --subreddit is required for Reddit posts')
       process.exit(1)
@@ -198,17 +219,19 @@ async function handleSchedule(args: ParsedArgs): Promise<void> {
     }
   }
 
-  // Parse datetime
-  let scheduledAt: string
-  try {
-    const date = new Date(at)
-    if (isNaN(date.getTime())) {
-      throw new Error('Invalid date')
+  // Parse datetime if scheduling
+  let scheduledAt: string | null = null
+  if (at) {
+    try {
+      const date = new Date(at)
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date')
+      }
+      scheduledAt = date.toISOString()
+    } catch {
+      console.error('Error: Invalid datetime format. Use ISO 8601 or "YYYY-MM-DD HH:mm"')
+      process.exit(1)
     }
-    scheduledAt = date.toISOString()
-  } catch {
-    console.error('Error: Invalid datetime format. Use ISO 8601 or "YYYY-MM-DD HH:mm"')
-    process.exit(1)
   }
 
   const now = new Date().toISOString()
@@ -217,14 +240,17 @@ async function handleSchedule(args: ParsedArgs): Promise<void> {
     createdAt: now,
     updatedAt: now,
     scheduledAt,
-    status: 'scheduled',
+    status: isDraft ? 'draft' : 'scheduled',
     platforms,
     content: {},
   }
 
+  // Parse media URLs if provided
+  const mediaUrls = mediaStr ? mediaStr.split(',').map(url => url.trim()).filter(url => url.length > 0) : undefined
+
   // Build content per platform
   if (platforms.includes('twitter')) {
-    post.content.twitter = { text }
+    post.content.twitter = { text, ...(mediaUrls && { mediaUrls }) }
   }
   if (platforms.includes('linkedin')) {
     post.content.linkedin = {
@@ -234,18 +260,47 @@ async function handleSchedule(args: ParsedArgs): Promise<void> {
   }
   if (platforms.includes('reddit')) {
     post.content.reddit = {
-      subreddit: subreddit!,
-      title: title!,
+      subreddit: subreddit || '',
+      title: title || '',
       body: text,
+      ...(flair && { flairText: flair }),
     }
   }
+
+  return post
+}
+
+async function handleDraft(args: ParsedArgs): Promise<void> {
+  const config = requireConfig()
+  const post = buildPost(args, true)
+
+  try {
+    const result = await createDraftPost(config, post)
+    console.log(`\nDraft created successfully!`)
+    console.log(`  ID:        ${result.id}`)
+    console.log(`  Platforms: ${post.platforms.join(', ')}`)
+    console.log(`  Path:      ${result.path}`)
+    console.log('')
+
+    if (args.flags['json']) {
+      console.log(JSON.stringify(post, null, 2))
+    }
+  } catch (error) {
+    console.error('Failed to create draft:', error instanceof Error ? error.message : error)
+    process.exit(1)
+  }
+}
+
+async function handleSchedule(args: ParsedArgs): Promise<void> {
+  const config = requireConfig()
+  const post = buildPost(args, false)
 
   try {
     const result = await createScheduledPost(config, post)
     console.log(`\nPost scheduled successfully!`)
     console.log(`  ID:        ${result.id}`)
-    console.log(`  Platforms: ${platforms.join(', ')}`)
-    console.log(`  Scheduled: ${new Date(scheduledAt).toLocaleString()}`)
+    console.log(`  Platforms: ${post.platforms.join(', ')}`)
+    console.log(`  Scheduled: ${new Date(post.scheduledAt!).toLocaleString()}`)
     console.log(`  Path:      ${result.path}`)
     console.log('')
 
@@ -260,9 +315,18 @@ async function handleSchedule(args: ParsedArgs): Promise<void> {
 
 async function handleList(args: ParsedArgs): Promise<void> {
   const config = requireConfig()
+  const statusFilter = args.flags['status'] as string | undefined
 
   try {
-    let posts = await listScheduledPosts(config)
+    let posts: Post[]
+
+    if (statusFilter === 'drafts') {
+      posts = await listDraftPosts(config)
+    } else if (statusFilter === 'scheduled') {
+      posts = await listScheduledPosts(config)
+    } else {
+      posts = await listAllPosts(config)
+    }
 
     const limit = args.flags['limit']
     if (limit && typeof limit === 'string') {
@@ -275,20 +339,28 @@ async function handleList(args: ParsedArgs): Promise<void> {
     }
 
     if (posts.length === 0) {
-      console.log('\nNo scheduled posts found.\n')
+      const statusLabel = statusFilter ? statusFilter : 'posts'
+      console.log(`\nNo ${statusLabel} found.\n`)
       return
     }
 
-    console.log(`\nScheduled Posts (${posts.length}):\n`)
+    const title = statusFilter
+      ? `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} (${posts.length})`
+      : `All Posts (${posts.length})`
+    console.log(`\n${title}:\n`)
 
     for (const post of posts) {
       const preview = getPreviewText(post).slice(0, 50)
       const platforms = post.platforms.join(', ')
-      const time = post.scheduledAt ? new Date(post.scheduledAt).toLocaleString() : 'Not set'
+      const statusBadge = post.status.toUpperCase()
 
-      console.log(`  ${post.id.slice(0, 8)}...`)
+      console.log(`  ${post.id.slice(0, 8)}... [${statusBadge}]`)
       console.log(`    Platforms: ${platforms}`)
-      console.log(`    Scheduled: ${time}`)
+      if (post.status === 'scheduled' && post.scheduledAt) {
+        console.log(`    Scheduled: ${new Date(post.scheduledAt).toLocaleString()}`)
+      } else if (post.status === 'draft') {
+        console.log(`    Updated:   ${new Date(post.updatedAt).toLocaleString()}`)
+      }
       console.log(`    Preview:   ${preview}${preview.length >= 50 ? '...' : ''}`)
       console.log('')
     }
@@ -298,26 +370,71 @@ async function handleList(args: ParsedArgs): Promise<void> {
   }
 }
 
-async function handleCancel(args: ParsedArgs): Promise<void> {
+async function handleGet(args: ParsedArgs): Promise<void> {
   const config = requireConfig()
   const id = args.positional[0]
 
   if (!id) {
     console.error('Error: Post ID is required')
-    console.error('Usage: scheduler cancel <id>')
+    console.error('Usage: scheduler get <id>')
     process.exit(1)
   }
 
   try {
-    const success = await cancelScheduledPost(config, id)
+    // Try all folders
+    let post: Post | null = null
+    for (const folder of ['drafts', 'scheduled', 'published'] as PostFolder[]) {
+      post = await getPost(config, id, folder)
+      if (post) break
+    }
+
+    if (!post) {
+      console.error(`Post ${id} not found.`)
+      process.exit(1)
+    }
+
+    if (args.flags['json']) {
+      console.log(JSON.stringify(post, null, 2))
+      return
+    }
+
+    console.log(`\nPost: ${post.id}`)
+    console.log(`  Status:    ${post.status}`)
+    console.log(`  Platforms: ${post.platforms.join(', ')}`)
+    console.log(`  Created:   ${new Date(post.createdAt).toLocaleString()}`)
+    console.log(`  Updated:   ${new Date(post.updatedAt).toLocaleString()}`)
+    if (post.scheduledAt) {
+      console.log(`  Scheduled: ${new Date(post.scheduledAt).toLocaleString()}`)
+    }
+    console.log(`  Content:`)
+    console.log(`    ${getPreviewText(post)}`)
+    console.log('')
+  } catch (error) {
+    console.error('Failed to get post:', error instanceof Error ? error.message : error)
+    process.exit(1)
+  }
+}
+
+async function handleDelete(args: ParsedArgs): Promise<void> {
+  const config = requireConfig()
+  const id = args.positional[0]
+
+  if (!id) {
+    console.error('Error: Post ID is required')
+    console.error('Usage: scheduler delete <id>')
+    process.exit(1)
+  }
+
+  try {
+    const success = await deletePostAny(config, id)
     if (success) {
-      console.log(`Post ${id} cancelled successfully.`)
+      console.log(`Post ${id} deleted successfully.`)
     } else {
       console.error(`Post ${id} not found.`)
       process.exit(1)
     }
   } catch (error) {
-    console.error('Failed to cancel post:', error instanceof Error ? error.message : error)
+    console.error('Failed to delete post:', error instanceof Error ? error.message : error)
     process.exit(1)
   }
 }
@@ -347,6 +464,10 @@ async function main(): Promise<void> {
       handleStatus()
       break
 
+    case 'draft':
+      await handleDraft(args)
+      break
+
     case 'schedule':
       await handleSchedule(args)
       break
@@ -355,8 +476,13 @@ async function main(): Promise<void> {
       await handleList(args)
       break
 
-    case 'cancel':
-      await handleCancel(args)
+    case 'get':
+      await handleGet(args)
+      break
+
+    case 'delete':
+    case 'cancel': // alias for backwards compat
+      await handleDelete(args)
       break
 
     case 'logout':

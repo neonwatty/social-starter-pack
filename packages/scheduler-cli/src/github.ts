@@ -9,27 +9,44 @@ function getPath(folder: PostFolder, id: string): string {
   return `posts/${folder}/${id}.json`
 }
 
-export async function createScheduledPost(
+export async function createPost(
   config: SchedulerConfig,
-  post: Post
+  post: Post,
+  folder: PostFolder
 ): Promise<{ id: string; path: string }> {
   const octokit = getOctokit(config)
-  const filePath = getPath('scheduled', post.id)
+  const filePath = getPath(folder, post.id)
 
   // Create or update the file
   await octokit.repos.createOrUpdateFileContents({
     owner: config.owner,
     repo: config.repo,
     path: filePath,
-    message: `Schedule post: ${post.id}`,
+    message: `${post.status === 'draft' ? 'Create draft' : 'Schedule post'}: ${post.id}`,
     content: Buffer.from(JSON.stringify(post, null, 2)).toString('base64'),
   })
 
   return { id: post.id, path: filePath }
 }
 
-export async function listScheduledPosts(
-  config: SchedulerConfig
+// Alias for backwards compatibility
+export async function createScheduledPost(
+  config: SchedulerConfig,
+  post: Post
+): Promise<{ id: string; path: string }> {
+  return createPost(config, post, 'scheduled')
+}
+
+export async function createDraftPost(
+  config: SchedulerConfig,
+  post: Post
+): Promise<{ id: string; path: string }> {
+  return createPost(config, post, 'drafts')
+}
+
+export async function listPosts(
+  config: SchedulerConfig,
+  folder: PostFolder
 ): Promise<Post[]> {
   const octokit = getOctokit(config)
 
@@ -37,7 +54,7 @@ export async function listScheduledPosts(
     const { data } = await octokit.repos.getContent({
       owner: config.owner,
       repo: config.repo,
-      path: 'posts/scheduled',
+      path: `posts/${folder}`,
     })
 
     if (!Array.isArray(data)) {
@@ -65,11 +82,14 @@ export async function listScheduledPosts(
       }
     }
 
-    // Sort by scheduled date
+    // Sort by date (scheduled date for scheduled, updated date for drafts)
     posts.sort((a, b) => {
-      if (!a.scheduledAt) return 1
-      if (!b.scheduledAt) return -1
-      return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+      if (folder === 'scheduled') {
+        if (!a.scheduledAt) return 1
+        if (!b.scheduledAt) return -1
+        return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+      }
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     })
 
     return posts
@@ -80,6 +100,24 @@ export async function listScheduledPosts(
     }
     throw error
   }
+}
+
+// Convenience functions
+export async function listScheduledPosts(config: SchedulerConfig): Promise<Post[]> {
+  return listPosts(config, 'scheduled')
+}
+
+export async function listDraftPosts(config: SchedulerConfig): Promise<Post[]> {
+  return listPosts(config, 'drafts')
+}
+
+export async function listAllPosts(config: SchedulerConfig): Promise<Post[]> {
+  const [drafts, scheduled, published] = await Promise.all([
+    listPosts(config, 'drafts'),
+    listPosts(config, 'scheduled'),
+    listPosts(config, 'published'),
+  ])
+  return [...drafts, ...scheduled, ...published]
 }
 
 export async function getPost(
@@ -111,12 +149,13 @@ export async function getPost(
   }
 }
 
-export async function cancelScheduledPost(
+export async function deletePost(
   config: SchedulerConfig,
-  id: string
+  id: string,
+  folder: PostFolder
 ): Promise<boolean> {
   const octokit = getOctokit(config)
-  const filePath = getPath('scheduled', id)
+  const filePath = getPath(folder, id)
 
   try {
     // Get the file first to get its SHA
@@ -135,7 +174,7 @@ export async function cancelScheduledPost(
       owner: config.owner,
       repo: config.repo,
       path: filePath,
-      message: `Cancel scheduled post: ${id}`,
+      message: `Delete ${folder.slice(0, -1)}: ${id}`,
       sha: data.sha,
     })
 
@@ -146,6 +185,26 @@ export async function cancelScheduledPost(
     }
     throw error
   }
+}
+
+// Try to delete from any folder
+export async function deletePostAny(
+  config: SchedulerConfig,
+  id: string
+): Promise<boolean> {
+  for (const folder of ['drafts', 'scheduled', 'published'] as PostFolder[]) {
+    const deleted = await deletePost(config, id, folder)
+    if (deleted) return true
+  }
+  return false
+}
+
+// Alias for backwards compatibility
+export async function cancelScheduledPost(
+  config: SchedulerConfig,
+  id: string
+): Promise<boolean> {
+  return deletePost(config, id, 'scheduled')
 }
 
 export async function updatePost(
