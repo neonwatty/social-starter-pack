@@ -45,7 +45,11 @@ Claude Code skills that use the MCP tools above:
 |-------|---------|-------------|
 | [blog-capture](./skills/blog-capture) | "blog this", "capture for blog" | Captures blog-worthy moments mid-project with screenshots, code snippets, and SEO research via autocomplete |
 
-Skills are installed by adding the skill directory to your project's `.claude/skills/` folder.
+### Installing Skills
+
+```bash
+/plugin install neonwatty/social-starter-pack --scope project
+```
 
 ## Quick Example
 
