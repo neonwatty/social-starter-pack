@@ -37,6 +37,16 @@ Designed for Claude Code, Codex, and similar AI coding assistants. This is not a
 | [spawn-claude](./packages/spawn-claude) | Spawn Claude Code in new Ghostty terminals (macOS) | npm |
 | [mcp-server](./packages/mcp-server) | MCP server for Claude Code integration | npm |
 
+## Skills
+
+Claude Code skills that use the MCP tools above:
+
+| Skill | Trigger | Description |
+|-------|---------|-------------|
+| [blog-capture](./skills/blog-capture) | "blog this", "capture for blog" | Captures blog-worthy moments mid-project with screenshots, code snippets, and SEO research via autocomplete |
+
+Skills are installed by adding the skill directory to your project's `.claude/skills/` folder.
+
 ## Quick Example
 
 Research a topic and post about it:
