@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*@*'  # Matches package@version pattern (e.g., youtube-cli@1.0.0)
+
+jobs:
+  # Parse the tag to extract package name and version
+  parse-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.parse.outputs.package }}
+      version: ${{ steps.parse.outputs.version }}
+      package_type: ${{ steps.parse.outputs.package_type }}
+    steps:
+      - name: Parse tag
+        id: parse
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          PACKAGE=${TAG%@*}
+          VERSION=${TAG#*@}
+
+          echo "package=$PACKAGE" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Determine package type
+          if [ "$PACKAGE" = "reddit-market-research" ]; then
+            echo "package_type=pip" >> $GITHUB_OUTPUT
+          else
+            echo "package_type=npm" >> $GITHUB_OUTPUT
+          fi
+
+          echo "📦 Package: $PACKAGE"
+          echo "🏷️  Version: $VERSION"
+
+  # Publish npm packages
+  publish-npm:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.package_type == 'npm'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: packages/${{ needs.parse-tag.outputs.package }}/package-lock.json
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        run: npm ci
+
+      - name: Type check
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        run: npm run typecheck --if-present
+
+      - name: Lint
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        run: npm run lint --if-present
+
+      - name: Test
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        run: npm run test --if-present
+
+      - name: Build
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        run: npm run build
+
+      - name: Publish to npm
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Publish pip packages
+  publish-pip:
+    needs: parse-tag
+    if: needs.parse-tag.outputs.package_type == 'pip'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build package
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        run: python -m build
+
+      - name: Publish to PyPI
+        working-directory: packages/${{ needs.parse-tag.outputs.package }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
+
+  # Create GitHub Release
+  create-release:
+    needs: [parse-tag, publish-npm, publish-pip]
+    if: always() && (needs.publish-npm.result == 'success' || needs.publish-pip.result == 'success')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ needs.parse-tag.outputs.package }} v${{ needs.parse-tag.outputs.version }}
+          generate_release_notes: true
+          body: |
+            ## ${{ needs.parse-tag.outputs.package }} v${{ needs.parse-tag.outputs.version }}
+
+            ${{ needs.parse-tag.outputs.package_type == 'npm' && format('Install: `npm install -g @neonwatty/{0}`', needs.parse-tag.outputs.package) || format('Install: `pip install {0}`', needs.parse-tag.outputs.package) }}

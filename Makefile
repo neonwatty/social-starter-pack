@@ -1,4 +1,4 @@
-.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin test-gforms test-gsc test-spawn-claude install-mcp uninstall-mcp spawn-claude
+.PHONY: install install-node install-python install-doppler doppler-connect setup-secrets setup-doppler check help test test-autocomplete test-demo-recorder test-youtube test-reddit test-twitter test-linkedin test-gforms test-gsc test-spawn-claude install-mcp uninstall-mcp spawn-claude release
 
 # Default target
 help:
@@ -27,6 +27,9 @@ help:
 	@echo "  make test-gsc"
 	@echo "  make test-spawn-claude"
 	@echo "  make test-reddit"
+	@echo ""
+	@echo "Release:"
+	@echo "  make release PKG=<name> [VERSION=<ver>]  Release a package (e.g., make release PKG=youtube-cli)"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  make check            Verify all tools are installed and configured"
@@ -271,3 +274,19 @@ check:
 	else \
 		echo "  [MISSING] No secrets configured - run 'make setup-doppler' or 'make setup-secrets'"; \
 	fi
+
+# ============================================================================
+# Release
+# ============================================================================
+
+release:
+ifndef PKG
+	@echo "Error: PKG is required. Usage: make release PKG=<package-name> [VERSION=<version>]"
+	@echo "Example: make release PKG=youtube-cli VERSION=1.2.0"
+	@exit 1
+endif
+ifdef VERSION
+	@./scripts/release.sh $(PKG) $(VERSION)
+else
+	@./scripts/release.sh $(PKG)
+endif
